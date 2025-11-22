@@ -26,6 +26,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                    HttpServletResponse response,
                                    FilterChain filterChain) throws ServletException, IOException {
+        // Skip JWT validation for public endpoints
+        String requestPath = request.getRequestURI().replaceFirst("^/api", "");
+        String method = request.getMethod();
+        
+        if (isPublicEndpoint(requestPath, method)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         try {
             String jwt = getJwtFromRequest(request);
 
@@ -44,6 +53,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isPublicEndpoint(String path, String method) {
+        // Public endpoints that don't require JWT
+        return (path.equals("/") || 
+                path.equals("/health") ||
+                (method.equals("POST") && path.equals("/auth/register")) ||
+                (method.equals("POST") && path.equals("/auth/login")) ||
+                (method.equals("GET") && path.equals("/products")) ||
+                (method.equals("GET") && path.startsWith("/products/")));
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

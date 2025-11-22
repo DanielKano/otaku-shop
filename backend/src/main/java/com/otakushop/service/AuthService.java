@@ -39,6 +39,7 @@ public class AuthService {
                 .name(request.getName())
                 .phone(request.getPhone())
                 .role(Role.fromValue(request.getRole()))
+                .enabled(true)
                 .build();
 
         user = userRepository.save(user);
@@ -61,6 +62,38 @@ public class AuthService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().getValue());
+
+        return AuthResponse.builder()
+                .token(token)
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole().getValue())
+                .build();
+    }
+
+    @Transactional
+    public AuthResponse createSuperAdmin(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("El email ya está registrado");
+        }
+
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Las contraseñas no coinciden");
+        }
+
+        User user = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .name(request.getName())
+                .phone(request.getPhone())
+                .role(Role.SUPERADMIN)
+                .enabled(true)
+                .build();
+
+        user = userRepository.save(user);
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().getValue());
 

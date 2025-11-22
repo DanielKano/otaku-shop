@@ -29,38 +29,38 @@ public class JwtTokenProvider {
     }
 
     public String getUserEmailFromJWT(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key())
+        return Jwts.parser()
+                .verifyWith((javax.crypto.SecretKey) key())
                 .build()
-                .parseClaimsJws(token)
-                .getBody()
+                .parseSignedClaims(token)
+                .getPayload()
                 .getSubject();
     }
 
     public Long getUserIdFromJWT(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key())
+        return Long.parseLong(Jwts.parser()
+                .verifyWith((javax.crypto.SecretKey) key())
                 .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("userId", Long.class);
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("userId", String.class));
     }
 
     public String getRoleFromJWT(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key())
+        return Jwts.parser()
+                .verifyWith((javax.crypto.SecretKey) key())
                 .build()
-                .parseClaimsJws(token)
-                .getBody()
+                .parseSignedClaims(token)
+                .getPayload()
                 .get("role", String.class);
     }
 
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key())
+            Jwts.parser()
+                    .verifyWith((javax.crypto.SecretKey) key())
                     .build()
-                    .parseClaimsJws(authToken);
+                    .parseSignedClaims(authToken);
             return true;
         } catch (MalformedJwtException ex) {
             log.error("Invalid JWT token: {}", ex.getMessage());
