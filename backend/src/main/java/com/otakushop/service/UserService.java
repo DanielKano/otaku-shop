@@ -4,6 +4,7 @@ import com.otakushop.dto.UserResponse;
 import com.otakushop.entity.User;
 import com.otakushop.entity.Role;
 import com.otakushop.repository.UserRepository;
+import com.otakushop.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final SecurityUtil securityUtil;
 
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
@@ -30,20 +32,59 @@ public class UserService {
 
     @Transactional
     public UserResponse updateUserRole(Long id, String roleValue) {
-        User user = userRepository.findById(id)
+        // Validar que no sea nulo
+        if (id == null || roleValue == null) {
+            throw new IllegalArgumentException("ID y role no pueden ser nulos");
+        }
+        
+        // Validar que el rol sea válido
+        Role newRole;
+        try {
+            newRole = Role.fromValue(roleValue.toLowerCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Rol inválido: " + roleValue);
+        }
+        
+        // Obtener el usuario a cambiar
+        User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         
-        user.setRole(Role.fromValue(roleValue));
-        user = userRepository.save(user);
-        return convertToResponse(user);
+        // NO PERMITIR: Cambiar a otro SUPERADMIN (solo uno debe existir)
+        if (newRole == Role.SUPERADMIN && !targetUser.getRole().equals(Role.SUPERADMIN)) {
+            throw new IllegalArgumentException("No se puede crear otro SUPERADMIN");
+        }
+        
+        // NO PERMITIR: Cambiar rol del usuario actual a CLIENTE o VENDEDOR
+        Long currentUserId = securityUtil.getCurrentUserId();
+        if (id.equals(currentUserId) && (newRole == Role.CLIENTE || newRole == Role.VENDEDOR)) {
+            throw new IllegalArgumentException("No puedes cambiar tu propio rol a CLIENTE o VENDEDOR");
+        }
+        
+        // Hacer el cambio
+        targetUser.setRole(newRole);
+        targetUser = userRepository.save(targetUser);
+        return convertToResponse(targetUser);
     }
 
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("Usuario no encontrado");
+        // Validar que el usuario exista
+        User userToDelete = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        // NO PERMITIR: Eliminar SUPERADMIN
+        if (userToDelete.getRole() == Role.SUPERADMIN) {
+            throw new IllegalArgumentException("No se puede eliminar a un SUPERADMIN");
         }
-        userRepository.deleteById(id);
+        
+        // NO PERMITIR: Eliminar otro ADMIN siendo ADMIN (solo SUPERADMIN puede)
+        if (userToDelete.getRole() == Role.ADMIN && !securityUtil.hasRole("SUPERADMIN")) {
+            throw new IllegalArgumentException("Solo SUPERADMIN puede eliminar a un ADMIN");
+        }
+        
+        // SOFT DELETE: Marcar como deshabilitado en lugar de eliminar
+        userToDelete.setEnabled(false);
+        userRepository.save(userToDelete);
     }
 
     @Transactional

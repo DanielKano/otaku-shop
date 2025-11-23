@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -31,7 +32,8 @@ public class UserController {
     @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<UserResponse> updateUserRole(
             @PathVariable Long id,
-            @RequestParam String role) {
+            @RequestBody Map<String, String> request) {
+        String role = request.get("role");
         return ResponseEntity.ok(userService.updateUserRole(id, role));
     }
 

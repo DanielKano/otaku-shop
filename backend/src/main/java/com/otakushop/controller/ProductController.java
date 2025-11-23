@@ -3,11 +3,12 @@ package com.otakushop.controller;
 import com.otakushop.dto.ProductDTO;
 import com.otakushop.dto.ProductRequest;
 import com.otakushop.service.ProductService;
-import com.otakushop.security.JwtTokenProvider;
+import com.otakushop.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,11 +19,12 @@ import java.util.List;
 @CrossOrigin(origins = "${cors.allowedOrigins}")
 public class ProductController {
     private final ProductService productService;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final SecurityUtil securityUtil;
 
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        List<ProductDTO> products = productService.getAllProducts();
+        // Obtener solo productos aprobados (para clientes públicos)
+        List<ProductDTO> products = productService.getAllApprovedProducts();
         return ResponseEntity.ok(products);
     }
 
@@ -54,35 +56,29 @@ public class ProductController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('VENDEDOR')")
     public ResponseEntity<ProductDTO> createProduct(
-            @Valid @RequestBody ProductRequest request,
-            @RequestHeader("Authorization") String token) {
-        Long vendorId = extractUserIdFromToken(token);
+            @Valid @RequestBody ProductRequest request) {
+        Long vendorId = securityUtil.getCurrentUserId();
         ProductDTO product = productService.createProduct(request, vendorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(product);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('VENDEDOR')")
     public ResponseEntity<ProductDTO> updateProduct(
             @PathVariable Long id,
-            @Valid @RequestBody ProductRequest request,
-            @RequestHeader("Authorization") String token) {
-        Long vendorId = extractUserIdFromToken(token);
+            @Valid @RequestBody ProductRequest request) {
+        Long vendorId = securityUtil.getCurrentUserId();
         ProductDTO product = productService.updateProduct(id, request, vendorId);
         return ResponseEntity.ok(product);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(
-            @PathVariable Long id,
-            @RequestHeader("Authorization") String token) {
-        Long vendorId = extractUserIdFromToken(token);
+    @PreAuthorize("hasRole('VENDEDOR')")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        Long vendorId = securityUtil.getCurrentUserId();
         productService.deleteProduct(id, vendorId);
         return ResponseEntity.noContent().build();
-    }
-
-    private Long extractUserIdFromToken(String token) {
-        String tokenValue = token.replace("Bearer ", "");
-        return jwtTokenProvider.getUserIdFromJWT(tokenValue);
     }
 }

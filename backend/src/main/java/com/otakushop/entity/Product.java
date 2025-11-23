@@ -50,6 +50,20 @@ public class Product {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private String status = "PENDING";  // PENDING, APPROVED, REJECTED
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by_id")
+    private User approvedBy;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

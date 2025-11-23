@@ -25,6 +25,16 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene solo los productos aprobados (visibles para clientes)
+     */
+    public List<ProductDTO> getAllApprovedProducts() {
+        return productRepository.findAll().stream()
+                .filter(p -> "APPROVED".equals(p.getStatus()) && p.getActive())
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public ProductDTO getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
@@ -79,6 +89,11 @@ public class ProductService {
             throw new RuntimeException("No tienes permiso para actualizar este producto");
         }
 
+        // ✅ VALIDACIÓN: Solo se pueden editar productos en estado PENDING
+        if (!"PENDING".equals(product.getStatus())) {
+            throw new IllegalArgumentException("No se pueden editar productos que ya han sido aprobados o rechazados");
+        }
+
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
@@ -101,7 +116,10 @@ public class ProductService {
             throw new RuntimeException("No tienes permiso para eliminar este producto");
         }
 
-        productRepository.deleteById(id);
+        // ✅ SOFT DELETE: Marcar como inactivo y cambiar estado
+        product.setActive(false);
+        product.setStatus("DELETED");
+        productRepository.save(product);
     }
 
     private ProductDTO convertToDTO(Product product) {
