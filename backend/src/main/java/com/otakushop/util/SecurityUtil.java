@@ -1,14 +1,21 @@
 package com.otakushop.util;
 
+import com.otakushop.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Component
+@RequiredArgsConstructor
 public class SecurityUtil {
+    private final JwtTokenProvider jwtTokenProvider;
+    private final HttpServletRequest httpServletRequest;
     
     /**
-     * Obtiene el ID del usuario autenticado
+     * Obtiene el ID del usuario autenticado desde el JWT
      */
     public Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -17,30 +24,24 @@ public class SecurityUtil {
             throw new SecurityException("Usuario no autenticado");
         }
         
-        Object principal = authentication.getPrincipal();
-        
-        // Si es un UserDetails, obtener el ID (custom)
-        if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-            String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
-            // Aquí podrías obtener el usuario de la DB, pero asumiremos que lo obtiene el AuthService
-            // Por ahora, retornamos el username como Long (esto requiere ajustes)
-        }
-        
-        // Si es un número (JWT parsing), retornar como Long
-        if (principal instanceof Number) {
-            return ((Number) principal).longValue();
-        }
-        
-        // Si es un string que contiene el ID
-        if (principal instanceof String) {
-            try {
-                return Long.parseLong((String) principal);
-            } catch (NumberFormatException e) {
-                throw new SecurityException("No se pudo extraer el ID del usuario");
-            }
+        // Obtener el JWT del header
+        String jwt = getJwtFromRequest();
+        if (StringUtils.hasText(jwt)) {
+            return jwtTokenProvider.getUserIdFromJWT(jwt);
         }
         
         throw new SecurityException("No se pudo obtener el ID del usuario");
+    }
+    
+    /**
+     * Obtiene el JWT del header Authorization
+     */
+    private String getJwtFromRequest() {
+        String bearerToken = httpServletRequest.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
     }
     
     /**
