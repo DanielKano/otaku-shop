@@ -103,7 +103,7 @@ public class UserService {
                 .email(user.getEmail())
                 .name(user.getName())
                 .phone(user.getPhone())
-                .role(user.getRole().getValue())
+                .role(user.getRole().name())
                 .enabled(user.getEnabled())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())

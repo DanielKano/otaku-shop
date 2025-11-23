@@ -44,14 +44,14 @@ public class AuthService {
 
         user = userRepository.save(user);
 
-        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().getValue());
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name());
 
         return AuthResponse.builder()
                 .token(token)
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .role(user.getRole().getValue())
+                .role(user.getRole().name())
                 .build();
     }
 
@@ -63,14 +63,14 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().getValue());
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name());
 
         return AuthResponse.builder()
                 .token(token)
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .role(user.getRole().getValue())
+                .role(user.getRole().name())
                 .build();
     }
 
@@ -95,14 +95,14 @@ public class AuthService {
 
         user = userRepository.save(user);
 
-        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().getValue());
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name());
 
         return AuthResponse.builder()
                 .token(token)
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .role(user.getRole().getValue())
+                .role(user.getRole().name())
                 .build();
     }
 }

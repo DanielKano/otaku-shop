@@ -1,10 +1,10 @@
 package com.otakushop.entity;
 
 public enum Role {
-    CLIENTE("CLIENTE"),
-    VENDEDOR("VENDEDOR"),
-    ADMIN("ADMIN"),
-    SUPERADMIN("SUPERADMIN");
+    CLIENTE("cliente"),
+    VENDEDOR("vendedor"),
+    ADMIN("admin"),
+    SUPERADMIN("superadmin");
 
     private final String value;
 
