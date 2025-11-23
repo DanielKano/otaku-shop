@@ -2,6 +2,7 @@ package com.otakushop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,7 +28,16 @@ public class OrderItem {
     private Integer quantity;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private java.math.BigDecimal unitPrice;
+    private BigDecimal unitPrice;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal subtotal;
+
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(name = "product_image_url")
+    private String productImageUrl;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

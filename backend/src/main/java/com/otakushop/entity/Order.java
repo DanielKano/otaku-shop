@@ -2,7 +2,10 @@ package com.otakushop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -19,17 +22,40 @@ public class Order {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "pendiente";
+    private OrderStatus status;
 
-    @Column(nullable = false)
-    private java.math.BigDecimal total;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalPrice;
 
     @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;
 
+    @Column(name = "shipping_city")
+    private String shippingCity;
+
+    @Column(name = "shipping_postal_code")
+    private String shippingPostalCode;
+
+    @Column(name = "shipping_country")
+    private String shippingCountry;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "payment_method")
+    private String paymentMethod;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @Column(name = "tracking_number")
     private String trackingNumber;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -37,10 +63,22 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "shipped_at")
+    private LocalDateTime shippedAt;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (status == null) {
+            status = OrderStatus.PENDING;
+        }
     }
 
     @PreUpdate
