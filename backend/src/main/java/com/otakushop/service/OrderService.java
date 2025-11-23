@@ -63,7 +63,7 @@ public class OrderService {
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Producto no encontrado: " + itemRequest.getProductId()));
             
-            if (!product.getActive() || !ProductStatus.APPROVED.equals(product.getStatus())) {
+            if (!product.getActive() || !"APPROVED".equals(product.getStatus())) {
                 throw new IllegalArgumentException(
                         "Producto no disponible: " + product.getName());
             }
