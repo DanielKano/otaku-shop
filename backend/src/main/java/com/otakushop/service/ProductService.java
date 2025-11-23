@@ -35,6 +35,53 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene los productos pendientes de aprobación
+     */
+    public List<ProductDTO> getPendingProducts() {
+        return productRepository.findAll().stream()
+                .filter(p -> "PENDING".equals(p.getStatus()) && p.getActive())
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Aprueba un producto (cambiar estado a APPROVED)
+     */
+    @Transactional
+    public ProductDTO approveProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        if (!"PENDING".equals(product.getStatus())) {
+            throw new RuntimeException("Solo se pueden aprobar productos en estado PENDING");
+        }
+        
+        product.setStatus("APPROVED");
+        product.setApprovedAt(java.time.LocalDateTime.now());
+        Product savedProduct = productRepository.save(product);
+        return convertToDTO(savedProduct);
+    }
+
+    /**
+     * Rechaza un producto (cambiar estado a REJECTED)
+     */
+    @Transactional
+    public ProductDTO rejectProduct(Long productId, String reason) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        if (!"PENDING".equals(product.getStatus())) {
+            throw new RuntimeException("Solo se pueden rechazar productos en estado PENDING");
+        }
+        
+        product.setStatus("REJECTED");
+        product.setRejectionReason(reason);
+        product.setApprovedAt(java.time.LocalDateTime.now());
+        Product savedProduct = productRepository.save(product);
+        return convertToDTO(savedProduct);
+    }
+
     public ProductDTO getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));

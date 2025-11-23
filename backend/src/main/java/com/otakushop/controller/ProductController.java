@@ -81,4 +81,38 @@ public class ProductController {
         productService.deleteProduct(id, vendorId);
         return ResponseEntity.noContent().build();
     }
+
+    // ===== ENDPOINTS DE APROBACIÓN (ADMIN) =====
+
+    /**
+     * Obtiene los productos pendientes de aprobación (solo ADMIN)
+     */
+    @GetMapping("/admin/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ProductDTO>> getPendingProducts() {
+        List<ProductDTO> products = productService.getPendingProducts();
+        return ResponseEntity.ok(products);
+    }
+
+    /**
+     * Aprueba un producto (solo ADMIN)
+     */
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProductDTO> approveProduct(@PathVariable Long id) {
+        ProductDTO product = productService.approveProduct(id);
+        return ResponseEntity.ok(product);
+    }
+
+    /**
+     * Rechaza un producto (solo ADMIN)
+     */
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProductDTO> rejectProduct(
+            @PathVariable Long id,
+            @RequestParam String reason) {
+        ProductDTO product = productService.rejectProduct(id, reason);
+        return ResponseEntity.ok(product);
+    }
 }
