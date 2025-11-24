@@ -84,14 +84,26 @@ public class ProductController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int limit) {
         
-        // Obtener solo productos aprobados (para clientes públicos)
-        List<ProductDTO> approved = productService.getAllApprovedProducts();
+        // Filtrar productos aprobados con todos los parámetros
+        List<ProductDTO> filteredProducts = productService.filterApprovedProducts(
+            search, category, minPrice, maxPrice
+        );
+        
+        // Paginación manual
+        int start = (page - 1) * limit;
+        int end = Math.min(start + limit, filteredProducts.size());
+        List<ProductDTO> paginatedProducts = start < filteredProducts.size() 
+            ? filteredProducts.subList(start, end) 
+            : List.of();
+        
+        int totalPages = (int) Math.ceil((double) filteredProducts.size() / limit);
         
         // Retornar con estructura esperada por frontend
         Map<String, Object> response = new HashMap<>();
-        response.put("products", approved);
-        response.put("pages", 1);
-        response.put("total", approved.size());
+        response.put("products", paginatedProducts);
+        response.put("pages", totalPages);
+        response.put("total", filteredProducts.size());
+        response.put("currentPage", page);
         return ResponseEntity.ok(response);
     }
 

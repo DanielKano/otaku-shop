@@ -116,6 +116,22 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Filtra productos aprobados con búsqueda, categoría y rango de precio
+     */
+    public List<ProductDTO> filterApprovedProducts(String search, String category, BigDecimal minPrice, BigDecimal maxPrice) {
+        return productRepository.findAll().stream()
+                .filter(p -> "APPROVED".equals(p.getStatus()) && (p.getActive() != null && p.getActive()))
+                .filter(p -> search == null || search.isEmpty() || 
+                           p.getName().toLowerCase().contains(search.toLowerCase()) ||
+                           (p.getDescription() != null && p.getDescription().toLowerCase().contains(search.toLowerCase())))
+                .filter(p -> category == null || category.isEmpty() || category.equals(p.getCategory()))
+                .filter(p -> minPrice == null || p.getPrice().compareTo(minPrice) >= 0)
+                .filter(p -> maxPrice == null || p.getPrice().compareTo(maxPrice) <= 0)
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public ProductDTO createProduct(ProductRequest request, Long vendorId) {
         User vendor = userRepository.findById(vendorId)
