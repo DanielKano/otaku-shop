@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { IoSearch, IoClose } from 'react-icons/io5'
+import Button from '../ui/Button'
 
 const FilterPanel = ({
   onSearch,
@@ -43,27 +44,27 @@ const FilterPanel = ({
   if (!isOpen) return null
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
+    <div className="glass-effect rounded-xl shadow-lg p-6 space-y-6 border border-white/10 hover:border-neon-purple/30 transition-all duration-300 animate-fade-in">
       {/* Search */}
       <div>
-        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          Buscar
+        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          🔍 Buscar
         </label>
         <div className="relative">
-          <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neon-purple" />
           <input
             type="text"
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full pl-10 pr-10 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-neon-purple focus:border-neon-purple outline-none transition-all"
           />
           {searchTerm && (
             <button
               onClick={() => handleSearchChange({ target: { value: '' } })}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-neon-pink transition-colors"
             >
-              <IoClose />
+              <IoClose size={20} />
             </button>
           )}
         </div>
@@ -71,19 +72,28 @@ const FilterPanel = ({
 
       {/* Categories */}
       <div>
-        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          Categoría
+        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          🏷️ Categoría
         </label>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
+        <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
           {categories.map((category) => (
-            <label key={category} className="flex items-center cursor-pointer">
+            <label 
+              key={category} 
+              className={`flex items-center cursor-pointer p-2 rounded-lg hover:bg-white/10 transition-all ${
+                selectedCategory === category ? 'bg-gradient-to-r from-neon-purple/20 to-neon-pink/20 border border-neon-purple/50' : ''
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={selectedCategory === category}
                 onChange={() => handleCategoryChange(category)}
-                className="w-4 h-4 rounded border-gray-300"
+                className="w-4 h-4 rounded border-gray-300 text-neon-purple focus:ring-neon-purple"
               />
-              <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <span className={`ml-3 text-sm ${
+                selectedCategory === category 
+                  ? 'text-neon-purple dark:text-neon-cyan font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}>
                 {category}
               </span>
             </label>
@@ -93,34 +103,38 @@ const FilterPanel = ({
 
       {/* Price Range */}
       <div>
-        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          Rango de Precio
+        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          💰 Rango de Precio
         </label>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs text-gray-600 dark:text-gray-400">
-              Mín: ${priceRange[0]}
-            </label>
+        <div className="space-y-4">
+          <div className="bg-gradient-to-r from-neon-purple/10 to-neon-pink/10 p-3 rounded-lg border border-neon-purple/30">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Mínimo</span>
+              <span className="text-sm font-bold text-neon-purple">${priceRange[0]}</span>
+            </div>
             <input
               type="range"
               min="0"
               max="1000"
+              step="10"
               value={priceRange[0]}
               onChange={(e) => handlePriceChange('min', e.target.value)}
-              className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+              className="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-neon-purple"
             />
           </div>
-          <div>
-            <label className="text-xs text-gray-600 dark:text-gray-400">
-              Máx: ${priceRange[1]}
-            </label>
+          <div className="bg-gradient-to-r from-neon-pink/10 to-neon-cyan/10 p-3 rounded-lg border border-neon-pink/30">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Máximo</span>
+              <span className="text-sm font-bold text-neon-pink">${priceRange[1]}</span>
+            </div>
             <input
               type="range"
               min="0"
               max="1000"
+              step="10"
               value={priceRange[1]}
               onChange={(e) => handlePriceChange('max', e.target.value)}
-              className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+              className="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-neon-pink"
             />
           </div>
         </div>
@@ -128,7 +142,10 @@ const FilterPanel = ({
 
       {/* Clear Filters */}
       {(searchTerm || selectedCategory || priceRange[0] > 0 || priceRange[1] < 1000) && (
-        <button
+        <Button
+          variant="neon-outline"
+          size="md"
+          className="w-full"
           onClick={() => {
             setSearchTerm('')
             setSelectedCategory('')
@@ -137,10 +154,9 @@ const FilterPanel = ({
             onCategoryChange?.('')
             onPriceChange?.([0, 1000])
           }}
-          className="w-full py-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
         >
-          Limpiar filtros
-        </button>
+          ✨ Limpiar filtros
+        </Button>
       )}
     </div>
   )

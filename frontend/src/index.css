@@ -87,6 +87,25 @@ body {
   .dark .hover-lift:hover {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   }
+  
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, var(--color-neon-purple), var(--color-neon-pink));
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, var(--color-neon-pink), var(--color-neon-cyan));
+  }
 }
 
 /* ========================================
