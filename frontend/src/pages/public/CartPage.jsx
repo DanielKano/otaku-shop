@@ -19,14 +19,14 @@ const CartPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Tu Carrito
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-5xl font-bold neon-text mb-3">
+            🛒 Tu Carrito
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
             {items.length} producto{items.length !== 1 ? 's' : ''} en tu carrito
           </p>
         </div>
@@ -51,19 +51,20 @@ const CartPage = () => {
             </div>
           </div>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-6xl mb-4">🛒</p>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <div className="text-center py-16 animate-scale-in">
+            <p className="text-8xl mb-6">🛒</p>
+            <h2 className="text-4xl font-bold neon-text mb-3">
               Tu carrito está vacío
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg">
               Explora nuestros productos y agrega algo a tu carrito
             </p>
             <Button
-              variant="primary"
+              variant="gradient"
+              size="lg"
               onClick={() => navigate('/productos')}
             >
-              Continuar Comprando
+              🛍️ Continuar Comprando
             </Button>
           </div>
         )}

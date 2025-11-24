@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import services from '../../services'
 import Button from '../../components/ui/Button'
+import NeonCard from '../../components/ui/NeonCard'
 import OrderDetailsModal from '../../components/modals/OrderDetailsModal'
 
 const ClientDashboard = () => {
@@ -28,20 +29,20 @@ const ClientDashboard = () => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header with Back Button */}
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-8 flex justify-between items-start animate-fade-in">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-              Bienvenido, {user?.name}
+            <h1 className="text-5xl font-bold neon-text">
+              👋 Bienvenido, {user?.name}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">
               Aquí puedes ver tu perfil y tus órdenes
             </p>
           </div>
           <Button 
-            variant="outline"
+            variant="glass"
             onClick={() => navigate(-1)}
             className="whitespace-nowrap"
           >
@@ -50,43 +51,43 @@ const ClientDashboard = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Mi Perfil
+        <NeonCard neonColor="purple" className="p-6 mb-8 animate-slide-in-right">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+            👤 Mi Perfil
           </h2>
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm text-gray-600 dark:text-gray-400">Nombre</label>
-              <p className="text-gray-900 dark:text-white">{user?.name}</p>
+          <div className="space-y-4">
+            <div className="glass-effect p-4 rounded-lg">
+              <label className="text-sm text-gray-600 dark:text-gray-400 font-semibold">📛 Nombre</label>
+              <p className="text-gray-900 dark:text-white text-lg mt-1">{user?.name}</p>
             </div>
-            <div>
-              <label className="text-sm text-gray-600 dark:text-gray-400">Email</label>
-              <p className="text-gray-900 dark:text-white">{user?.email}</p>
+            <div className="glass-effect p-4 rounded-lg">
+              <label className="text-sm text-gray-600 dark:text-gray-400 font-semibold">📧 Email</label>
+              <p className="text-gray-900 dark:text-white text-lg mt-1">{user?.email}</p>
             </div>
-            <div>
-              <label className="text-sm text-gray-600 dark:text-gray-400">Teléfono</label>
-              <p className="text-gray-900 dark:text-white">{user?.phone || 'No especificado'}</p>
+            <div className="glass-effect p-4 rounded-lg">
+              <label className="text-sm text-gray-600 dark:text-gray-400 font-semibold">📞 Teléfono</label>
+              <p className="text-gray-900 dark:text-white text-lg mt-1">{user?.phone || 'No especificado'}</p>
             </div>
           </div>
-        </div>
+        </NeonCard>
 
         {/* Orders */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Mis Órdenes
+        <NeonCard neonColor="gradient" className="p-6">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+            📝 Mis Órdenes
           </h2>
 
           {loading ? (
-            <p className="text-gray-600 dark:text-gray-400">Cargando órdenes...</p>
+            <p className="text-gray-600 dark:text-gray-400 animate-pulse">✨ Cargando órdenes...</p>
           ) : orders.length > 0 ? (
             <div className="space-y-4">
               {orders.map(order => (
-                <div key={order.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      Orden #{order.id}
+                <div key={order.id} className="glass-effect border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:scale-[1.02] transition-transform">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">
+                      🛒 Orden #{order.id}
                     </h3>
-                    <span className={`px-3 py-1 rounded text-sm font-medium ${
+                    <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
                       order.status === 'completed'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
@@ -94,15 +95,15 @@ const ClientDashboard = () => {
                       {order.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    Fecha: {new Date(order.createdAt).toLocaleDateString()}
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    📅 Fecha: {new Date(order.createdAt).toLocaleDateString()}
                   </p>
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      Total: ${order.total.toFixed(2)}
+                    <span className="font-bold text-gray-900 dark:text-white text-lg">
+                      💵 Total: ${order.total.toFixed(2)}
                     </span>
                     <Button 
-                      variant="outline" 
+                      variant="gradient-outline" 
                       size="sm"
                       onClick={() => {
                         setSelectedOrder(order)
@@ -116,11 +117,11 @@ const ClientDashboard = () => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-600 dark:text-gray-400">
-              Aún no has realizado ninguna compra
+            <p className="text-gray-600 dark:text-gray-400 text-center py-8 text-lg">
+              🛍️ Aún no has realizado ninguna compra
             </p>
           )}
-        </div>
+        </NeonCard>
 
         <OrderDetailsModal 
           isOpen={isModalOpen}

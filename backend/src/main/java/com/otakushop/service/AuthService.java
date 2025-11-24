@@ -3,6 +3,8 @@ package com.otakushop.service;
 import com.otakushop.dto.LoginRequest;
 import com.otakushop.dto.RegisterRequest;
 import com.otakushop.dto.AuthResponse;
+import com.otakushop.entity.AuthProvider;
+import com.otakushop.entity.RefreshToken;
 import com.otakushop.entity.User;
 import com.otakushop.entity.Role;
 import com.otakushop.repository.UserRepository;
@@ -21,6 +23,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
+    private final EmailService emailService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -38,15 +42,21 @@ public class AuthService {
                 .name(request.getName())
                 .phone(request.getPhone())
                 .role(Role.fromValue(request.getRole()))
+                .provider(AuthProvider.LOCAL)
                 .enabled(true)
                 .build();
 
         user = userRepository.save(user);
 
+        // Enviar email de bienvenida
+        emailService.sendWelcomeEmail(user.getEmail(), user.getName());
+
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken.getToken())
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -63,9 +73,11 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken.getToken())
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -95,9 +107,11 @@ public class AuthService {
         user = userRepository.save(user);
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken.getToken())
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())

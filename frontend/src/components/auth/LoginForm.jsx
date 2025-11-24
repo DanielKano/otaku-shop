@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Button from '../ui/Button'
-import Input from '../ui/Input'
+import ValidatedInput from '../ui/ValidatedInput'
 import Alert from '../ui/Alert'
 
 const loginSchema = z.object({
@@ -17,9 +18,13 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm({
     resolver: zodResolver(loginSchema),
   })
+
+  const email = watch('email', '')
+  const password = watch('password', '')
 
   const onSubmit = async (data) => {
     setApiError(null)
@@ -51,23 +56,29 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Email */}
-          <Input
+          <ValidatedInput
             label="Email"
             type="email"
             placeholder="tu@email.com"
+            fieldName="email"
+            value={email}
             {...register('email')}
             error={errors.email?.message}
             disabled={isLoading}
+            showValidationIcon={true}
           />
 
           {/* Password */}
-          <Input
+          <ValidatedInput
             label="Contraseña"
             type="password"
             placeholder="Tu contraseña"
+            fieldName="password"
+            value={password}
             {...register('password')}
             error={errors.password?.message}
             disabled={isLoading}
+            showValidationIcon={false}
           />
 
           {/* Remember Me */}
@@ -107,19 +118,36 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
 
         {/* Social Login */}
         <div className="space-y-3 mb-6">
-          <Button variant="glass" size="lg" className="w-full">
-            🔍 Google
+          <Button 
+            variant="glass" 
+            size="lg" 
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => {
+              window.location.href = 'http://localhost:8080/api/oauth2/authorization/google';
+            }}
+          >
+            <span className="text-xl">🔍</span> Continuar con Google
           </Button>
-          <Button variant="glass" size="lg" className="w-full">
-            📘 Facebook
+          <Button 
+            variant="glass" 
+            size="lg" 
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => {
+              window.location.href = 'http://localhost:8080/api/oauth2/authorization/facebook';
+            }}
+          >
+            <span className="text-xl">📘</span> Continuar con Facebook
           </Button>
         </div>
 
         {/* Forgot Password */}
         <div className="text-center mb-6">
-          <a href="#" className="text-neon-cyan hover:text-neon-pink text-sm transition-colors">
+          <Link 
+            to="/forgot-password" 
+            className="text-neon-cyan hover:text-neon-pink text-sm transition-colors"
+          >
             ¿Olvidaste tu contraseña?
-          </a>
+          </Link>
         </div>
 
         {/* Register Link */}

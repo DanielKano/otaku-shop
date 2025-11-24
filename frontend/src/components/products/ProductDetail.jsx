@@ -1,4 +1,5 @@
 import Button from '../ui/Button'
+import NeonCard from '../ui/NeonCard'
 import { useCart } from '../../hooks/useCart'
 import { useAuth } from '../../hooks/useAuth'
 import { useNotification } from '../../hooks/useNotification'
@@ -59,6 +60,15 @@ const ProductDetail = ({ product, onBack }) => {
       return
     }
 
+    // ✅ Validar contra stock disponible
+    if (quantity > product.stock) {
+      addNotification({
+        message: `Solo hay ${product.stock} unidades disponibles`,
+        type: 'error',
+      })
+      return
+    }
+
     addItem(product, quantity)
     addNotification({
       message: `${product.name} agregado al carrito`,
@@ -113,8 +123,8 @@ const ProductDetail = ({ product, onBack }) => {
   const isOutOfStock = !product.stock || product.stock === 0
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-      <Button onClick={onBack} variant="ghost" className="mb-4">
+    <NeonCard neonColor="gradient" className="p-6 animate-fade-in">
+      <Button onClick={onBack} variant="glass" className="mb-4">
         ← Volver
       </Button>
 
@@ -206,18 +216,18 @@ const ProductDetail = ({ product, onBack }) => {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className="px-4 py-2 glass-effect rounded-lg hover:scale-105 transition-transform font-bold text-lg"
                 >
                   −
                 </button>
-                <span className="text-2xl font-semibold min-w-12 text-center">
+                <span className="text-2xl font-semibold min-w-12 text-center text-gray-900 dark:text-white">
                   {quantity}
                 </span>
                 <button
                   onClick={() =>
                     setQuantity(Math.min(product.stock || 99, quantity + 1))
                   }
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className="px-4 py-2 glass-effect rounded-lg hover:scale-105 transition-transform font-bold text-lg"
                 >
                   +
                 </button>
@@ -228,16 +238,16 @@ const ProductDetail = ({ product, onBack }) => {
           {/* Add to Cart */}
           <div className="flex gap-4">
             <Button
-              variant="primary"
+              variant="gradient"
               size="lg"
               disabled={isOutOfStock}
               onClick={handleAddToCart}
               className="flex-1"
             >
-              {isOutOfStock ? 'Agotado' : 'Agregar al carrito'}
+              {isOutOfStock ? '❌ Agotado' : '🛒 Agregar al carrito'}
             </Button>
             <Button 
-              variant={isFavorite ? "primary" : "outline"} 
+              variant={isFavorite ? "gradient" : "gradient-outline"} 
               size="lg" 
               className="flex-1"
               onClick={handleToggleFavorite}
@@ -275,7 +285,7 @@ const ProductDetail = ({ product, onBack }) => {
           </div>
         </div>
       )}
-    </div>
+    </NeonCard>
   )
 }
 

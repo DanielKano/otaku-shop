@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Button from '../ui/Button'
-import Input from '../ui/Input'
+import ValidatedInput from '../ui/ValidatedInput'
+import PasswordStrengthIndicator from '../ui/PasswordStrengthIndicator'
 import Alert from '../ui/Alert'
 
 const registerSchema = z
@@ -27,7 +28,6 @@ const registerSchema = z
 
 const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
   const [apiError, setApiError] = useState(null)
-  const [passwordStrength, setPasswordStrength] = useState(0)
   const {
     register,
     handleSubmit,
@@ -38,15 +38,10 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
   })
 
   const password = watch('password', '')
-
-  const getPasswordStrength = (pass) => {
-    let strength = 0
-    if (pass.length >= 8) strength += 25
-    if (/[A-Z]/.test(pass)) strength += 25
-    if (/[a-z]/.test(pass)) strength += 25
-    if (/[0-9]/.test(pass) && /[@$!%*?&]/.test(pass)) strength += 25
-    return strength
-  }
+  const name = watch('name', '')
+  const email = watch('email', '')
+  const phone = watch('phone', '')
+  const confirmPassword = watch('confirmPassword', '')
 
   const onSubmit = async (data) => {
     setApiError(null)
@@ -54,7 +49,16 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
       // Send all data to backend (it needs confirmPassword for validation)
       await onRegister?.(data)
     } catch (error) {
-      setApiError(error.message || 'Error al registrarse')
+      // Mostrar errores de validación del backend
+      if (error.response?.data?.errors) {
+        const backendErrors = error.response.data.errors;
+        const errorMessages = Object.entries(backendErrors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join('\n');
+        setApiError(errorMessages);
+      } else {
+        setApiError(error.message || 'Error al registrarse');
+      }
     }
   }
 
@@ -79,86 +83,78 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Name */}
-          <Input
+          <ValidatedInput
             label="Nombre Completo"
             type="text"
             placeholder="Tu nombre completo"
+            fieldName="fullName"
+            value={name}
             {...register('name')}
             error={errors.name?.message}
             disabled={isLoading}
+            showValidationIcon={true}
           />
 
           {/* Email */}
-          <Input
+          <ValidatedInput
             label="Email"
             type="email"
             placeholder="tu@email.com"
+            fieldName="email"
+            value={email}
             {...register('email')}
             error={errors.email?.message}
             disabled={isLoading}
+            showValidationIcon={true}
           />
 
           {/* Phone */}
-          <Input
+          <ValidatedInput
             label="Teléfono"
             type="tel"
-            placeholder="1234567890"
+            placeholder="3001234567"
+            fieldName="phone"
+            value={phone}
             {...register('phone')}
             error={errors.phone?.message}
             disabled={isLoading}
+            showValidationIcon={true}
           />
 
           {/* Password */}
           <div>
-            <Input
+            <ValidatedInput
               label="Contraseña"
               type="password"
               placeholder="Crea una contraseña segura"
+              fieldName="password"
+              value={password}
               {...register('password')}
               error={errors.password?.message}
               disabled={isLoading}
-              onChange={(e) => {
-                register('password').onChange(e)
-                setPasswordStrength(getPasswordStrength(e.target.value))
-              }}
+              showValidationIcon={false}
             />
-            {password && (
-              <div className="mt-2">
-                <div className="flex gap-1 h-2">
-                  {[...Array(4)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`flex-1 rounded ${
-                        i < passwordStrength / 25
-                          ? passwordStrength < 50
-                            ? 'bg-red-500'
-                            : passwordStrength < 75
-                              ? 'bg-yellow-500'
-                              : 'bg-green-500'
-                          : 'bg-gray-300 dark:bg-gray-600'
-                      }`}
-                    ></div>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {passwordStrength < 50
-                    ? 'Débil'
-                    : passwordStrength < 75
-                      ? 'Media'
-                      : 'Fuerte'}
-                </p>
-              </div>
-            )}
+            <PasswordStrengthIndicator password={password} />
           </div>
 
           {/* Confirm Password */}
-          <Input
+          <ValidatedInput
             label="Confirmar Contraseña"
             type="password"
             placeholder="Repite tu contraseña"
+            fieldName="confirmPassword"
+            value={confirmPassword}
             {...register('confirmPassword')}
             error={errors.confirmPassword?.message}
             disabled={isLoading}
+            customValidator={(value) => {
+              if (!value) return null;
+              if (value !== password) {
+                return 'Las contraseñas no coinciden';
+              }
+              return null;
+            }}
+            showValidationIcon={true}
           />
 
           {/* Terms */}

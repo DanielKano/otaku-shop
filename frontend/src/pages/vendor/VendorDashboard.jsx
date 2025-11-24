@@ -4,6 +4,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useNotification } from '../../hooks/useNotification'
 import services from '../../services'
 import Button from '../../components/ui/Button'
+import StatsCardEnhanced from '../../components/ui/StatsCardEnhanced'
+import NeonCard from '../../components/ui/NeonCard'
 import EditProductModal from '../../components/modals/EditProductModal'
 import CreateProductModal from '../../components/modals/CreateProductModal'
 
@@ -197,20 +199,20 @@ const VendorDashboard = () => {
   const currentProducts = productsByStatus[activeTab] || []
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header with Back Button */}
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-8 flex justify-between items-start animate-fade-in">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-              Panel de Vendedor
+            <h1 className="text-5xl font-bold neon-text">
+              🛍️ Panel de Vendedor
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">
               Bienvenido, {user?.name}
             </p>
           </div>
           <Button 
-            variant="outline"
+            variant="glass"
             onClick={() => navigate(-1)}
             className="whitespace-nowrap"
           >
@@ -220,31 +222,50 @@ const VendorDashboard = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {[
-            { title: 'Total Productos', value: stats.totalProducts, color: 'blue' },
-            { title: 'Pendientes', value: stats.pendingApproval, color: 'yellow' },
-            { title: 'Aprobados', value: stats.approved, color: 'green' },
-            { title: 'Rechazados', value: stats.rejected, color: 'red' },
-          ].map((stat, idx) => (
-            <div key={idx} className={`bg-${stat.color}-50 dark:bg-${stat.color}-900/20 rounded-lg p-6 border border-${stat.color}-200 dark:border-${stat.color}-700`}>
-              <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
-                {stat.title}
-              </h3>
-              <p className={`text-3xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>
-                {stat.value}
-              </p>
-            </div>
-          ))}
+          <StatsCardEnhanced
+            title="Total Productos"
+            value={stats.totalProducts}
+            icon="📦"
+            trend="neutral"
+            color="purple"
+            neonEffect
+          />
+          <StatsCardEnhanced
+            title="Pendientes"
+            value={stats.pendingApproval}
+            icon="⏳"
+            trend={stats.pendingApproval > 0 ? 'up' : 'neutral'}
+            trendValue={stats.pendingApproval > 0 ? `${stats.pendingApproval} en revisión` : 'Todo al día'}
+            color="cyan"
+            neonEffect
+          />
+          <StatsCardEnhanced
+            title="Aprobados"
+            value={stats.approved}
+            icon="✅"
+            trend="up"
+            trendValue="Activos"
+            color="green"
+            neonEffect
+          />
+          <StatsCardEnhanced
+            title="Rechazados"
+            value={stats.rejected}
+            icon="❌"
+            trend={stats.rejected > 0 ? 'down' : 'neutral'}
+            color="pink"
+            neonEffect
+          />
         </div>
 
         {/* Products */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <NeonCard neonColor="gradient" className="mb-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Mis Productos ({stats.totalProducts})
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              📋 Mis Productos ({stats.totalProducts})
             </h2>
             <Button 
-              variant="primary"
+              variant="gradient"
               onClick={() => setIsCreateModalOpen(true)}
             >
               + Nuevo Producto
@@ -378,7 +399,7 @@ const VendorDashboard = () => {
               No hay productos en este estado. {activeTab === 'PENDING' && '¡Crea uno para comenzar!'}
             </p>
           )}
-        </div>
+        </NeonCard>
       </div>
 
       <EditProductModal

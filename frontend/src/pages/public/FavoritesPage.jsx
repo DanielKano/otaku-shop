@@ -63,11 +63,11 @@ const FavoritesPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Debes iniciar sesión para ver tus favoritos
+          <div className="text-center py-12 animate-fade-in">
+            <p className="text-gray-600 dark:text-gray-400 mb-4 text-lg">
+              🔒 Debes iniciar sesión para ver tus favoritos
             </p>
           </div>
         </div>
@@ -77,10 +77,10 @@ const FavoritesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">Cargando favoritos...</p>
+          <div className="text-center py-12 animate-pulse">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">✨ Cargando favoritos...</p>
           </div>
         </div>
       </div>
@@ -88,14 +88,14 @@ const FavoritesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="mb-12 animate-fade-in">
+          <h1 className="text-5xl font-bold neon-text mb-3">
             ❤️ Mis Favoritos
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
             Tienes {favorites.length} producto{favorites.length !== 1 ? 's' : ''} guardado{favorites.length !== 1 ? 's' : ''}
           </p>
         </div>

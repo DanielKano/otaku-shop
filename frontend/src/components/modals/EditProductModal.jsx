@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
+import ValidatedInput from '../ui/ValidatedInput'
 import services from '../../services'
 
 const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
@@ -132,25 +133,16 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
         )}
 
         {/* Nombre */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Nombre del Producto
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            disabled={!canEdit || loading}
-            placeholder="Ej: Manga One Piece Vol. 1"
-            className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-              errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-            }`}
-          />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
-          )}
-        </div>
+        <ValidatedInput
+          label="Nombre del Producto"
+          name="productName"
+          type="text"
+          value={formData.name}
+          onChange={(e) => handleChange({ target: { name: 'name', value: e.target.value } })}
+          disabled={!canEdit || loading}
+          placeholder="Ej: Manga One Piece Vol. 1"
+          required
+        />
 
         {/* Descripción */}
         <div>
@@ -164,7 +156,7 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
             disabled={!canEdit || loading}
             placeholder="Describe tu producto..."
             rows="3"
-            className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
               errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
           />
@@ -175,62 +167,46 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
 
         {/* Precio y Stock */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Precio
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              disabled={!canEdit || loading}
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-              className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-                errors.price ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-            />
-            {errors.price && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.price}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Stock
-            </label>
-            <input
-              type="number"
-              name="stock"
-              value={formData.stock}
-              onChange={handleChange}
-              disabled={!canEdit || loading}
-              placeholder="0"
-              min="0"
-              className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-                errors.stock ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-            />
-            {errors.stock && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.stock}</p>
-            )}
-          </div>
+          <ValidatedInput
+            label="Precio"
+            name="productPrice"
+            type="number"
+            value={formData.price}
+            onChange={(e) => handleChange({ target: { name: 'price', value: e.target.value } })}
+            disabled={!canEdit || loading}
+            placeholder="0.00"
+            step="0.01"
+            min="0"
+            required
+          />
+          
+          <ValidatedInput
+            label="Stock"
+            name="productStock"
+            type="number"
+            value={formData.stock}
+            onChange={(e) => handleChange({ target: { name: 'stock', value: e.target.value } })}
+            disabled={!canEdit || loading}
+            placeholder="0"
+            min="0"
+            required
+          />
         </div>
 
         {/* Categoría */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Categoría
+            Categoría <span className="text-red-500">*</span>
           </label>
           <select
             name="category"
             value={formData.category}
             onChange={handleChange}
             disabled={!canEdit || loading}
-            className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
               errors.category ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
+            required
           >
             <option value="">Selecciona una categoría</option>
             {categories.map(cat => (
@@ -243,25 +219,15 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
         </div>
 
         {/* URL de Imagen */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            URL de la Imagen (opcional)
-          </label>
-          <input
-            type="url"
-            name="imageUrl"
-            value={formData.imageUrl}
-            onChange={handleChange}
-            disabled={!canEdit || loading}
-            placeholder="https://ejemplo.com/imagen.jpg"
-            className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-              errors.imageUrl ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-            }`}
-          />
-          {errors.imageUrl && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.imageUrl}</p>
-          )}
-        </div>
+        <ValidatedInput
+          label="URL de la Imagen (opcional)"
+          name="imageUrl"
+          type="url"
+          value={formData.imageUrl}
+          onChange={(e) => handleChange({ target: { name: 'imageUrl', value: e.target.value } })}
+          disabled={!canEdit || loading}
+          placeholder="https://ejemplo.com/imagen.jpg"
+        />
 
         {/* Buttons */}
         <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-600">
@@ -286,4 +252,3 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
 }
 
 export default EditProductModal
-

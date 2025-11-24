@@ -1,29 +1,56 @@
 package com.otakushop.dto;
 
+import com.otakushop.validation.annotations.*;
 import lombok.*;
 import jakarta.validation.constraints.*;
 
+/**
+ * DTO para registro de usuario con validaciones avanzadas.
+ * Utiliza anotaciones personalizadas para validación estricta de:
+ * - Nombre completo (anti-spam, realismo semántico)
+ * - Email (whitelist de dominios permitidos)
+ * - Teléfono (prefijos colombianos válidos)
+ * - Contraseña (fortaleza, anti-common, anti-personal-info)
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class RegisterRequest {
-    @NotBlank(message = "El nombre es requerido")
-    @Size(min = 3, max = 50, message = "El nombre debe tener entre 3 y 50 caracteres")
+    
+    @ValidFullName(
+        message = "El nombre completo no es válido",
+        minWords = 2,
+        enableSemanticValidation = true,
+        strictMode = true
+    )
     private String name;
 
-    @NotBlank(message = "El email es requerido")
-    @Email(message = "El email debe ser válido")
+    @ValidStrictEmail(
+        message = "El correo electrónico no es válido o el dominio no está permitido",
+        checkDomain = true,
+        allowedDomains = {"gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "otaku.com", "otakushop.com"}
+    )
     private String email;
 
-    @NotBlank(message = "El teléfono es requerido")
-    @Pattern(regexp = "^\\d{10}$", message = "El teléfono debe tener 10 dígitos")
+    @ValidColombianPhone(
+        message = "El número telefónico colombiano no es válido",
+        enableSemanticValidation = true,
+        strictMode = true
+    )
     private String phone;
 
-    @NotBlank(message = "La contraseña es requerida")
-    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[a-zA-Z\\d@$!%*?&]{8,}$",
-             message = "La contraseña debe contener mayúscula, minúscula, número y carácter especial")
+    @ValidSecurePassword(
+        message = "La contraseña no cumple con los requisitos de seguridad",
+        minLength = 8,
+        requireUppercase = true,
+        requireLowercase = true,
+        requireNumber = true,
+        requireSpecial = true,
+        checkCommon = true,
+        enableStrengthCheck = true,
+        minStrength = "medium"
+    )
     private String password;
 
     @NotBlank(message = "Confirmación de contraseña requerida")
@@ -32,3 +59,4 @@ public class RegisterRequest {
     @Builder.Default
     private String role = "cliente";
 }
+

@@ -1,3 +1,5 @@
+import NeonCard from '../../components/ui/NeonCard'
+
 const PoliciesPage = () => {
   const policies = [
     {
@@ -153,55 +155,57 @@ WhatsApp: +1 234 567 8900`,
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="mb-12 animate-fade-in">
+          <h1 className="text-5xl font-bold neon-text mb-4">
             📋 Políticas y Términos
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
             Consulta nuestras políticas para una mejor experiencia de compra
           </p>
         </div>
 
         {/* Policies */}
         <div className="space-y-8">
-          {policies.map((policy) => (
-            <div
+          {policies.map((policy, idx) => (
+            <NeonCard
               key={policy.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8"
+              neonColor={['purple', 'cyan', 'pink', 'purple', 'cyan'][idx]}
+              className="p-8 animate-slide-in-right"
+              style={{ animationDelay: `${idx * 0.1}s` }}
             >
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                 {policy.title}
               </h2>
-              <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+              <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-base">
                 {policy.content}
               </div>
-            </div>
+            </NeonCard>
           ))}
         </div>
 
         {/* Contact */}
-        <div className="mt-12 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            ¿Preguntas sobre nuestras políticas?
+        <NeonCard neonColor="gradient" className="mt-12 p-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            ❓ ¿Preguntas sobre nuestras políticas?
           </h2>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">
             Contacta a nuestro equipo de soporte para aclaraciones o consultas específicas.
           </p>
-          <div className="space-y-2">
-            <p className="text-gray-700 dark:text-gray-300">
+          <div className="space-y-3 glass-effect p-6 rounded-lg">
+            <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">
               📧 Email: soporte@otakushop.com
             </p>
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">
               💬 WhatsApp: +1 234 567 8900
             </p>
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">
               🕐 Lunes a Viernes: 9:00 AM - 6:00 PM
             </p>
           </div>
-        </div>
+        </NeonCard>
       </div>
     </div>
   )

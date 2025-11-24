@@ -1,23 +1,26 @@
+import NeonCard from '../../components/ui/NeonCard'
+import StatsCardEnhanced from '../../components/ui/StatsCardEnhanced'
+
 const AboutPage = () => {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12">
       <div className="max-w-4xl mx-auto px-4">
         {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="text-center mb-16 animate-fade-in">
+          <h1 className="text-6xl font-bold neon-text mb-4">
             🎌 Otaku Shop
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
+          <p className="text-2xl text-gray-600 dark:text-gray-400">
             Tu tienda de confianza para productos anime, manga y cultura otaku
           </p>
         </div>
 
         {/* About Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-            Sobre Nosotros
+        <NeonCard neonColor="purple" className="p-8 mb-8 animate-slide-in-right">
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+            ✨ Sobre Nosotros
           </h2>
-          <div className="space-y-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+          <div className="space-y-4 text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
             <p>
               Otaku Shop nació de la pasión por el anime, manga y la cultura otaku. Nos dedica-
               mos a proporcionar productos de alta calidad a precios justos, tanto para coleccio-
@@ -33,7 +36,7 @@ const AboutPage = () => {
               rápida y un ambiente seguro para que disfrutes tu experiencia de compra.
             </p>
           </div>
-        </div>
+        </NeonCard>
 
         {/* Values Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -41,48 +44,54 @@ const AboutPage = () => {
             {
               title: '🎯 Misión',
               description: 'Hacer accesibles productos de anime y manga de calidad para todos los otakus.',
+              color: 'cyan',
             },
             {
               title: '⭐ Visión',
               description: 'Ser la plataforma número uno en Latinoamérica para compra de productos otaku.',
+              color: 'pink',
             },
             {
               title: '💚 Valores',
               description: 'Transparencia, calidad, confiabilidad y pasión por la comunidad otaku.',
+              color: 'purple',
             },
           ].map((value, idx) => (
-            <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+            <NeonCard key={idx} neonColor={value.color} animated className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                 {value.title}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
                 {value.description}
               </p>
-            </div>
+            </NeonCard>
           ))}
         </div>
 
         {/* Stats Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-white text-center">
-            {[
-              { number: '5,000+', label: 'Productos' },
-              { number: '50,000+', label: 'Clientes Felices' },
-              { number: '24/7', label: 'Soporte' },
-              { number: '100%', label: 'Seguro' },
-            ].map((stat, idx) => (
-              <div key={idx}>
-                <p className="text-4xl font-bold mb-2">{stat.number}</p>
-                <p className="text-blue-100">{stat.label}</p>
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {[
+            { number: '5,000+', label: 'Productos', icon: '📦', color: 'purple' },
+            { number: '50,000+', label: 'Clientes Felices', icon: '😊', color: 'cyan' },
+            { number: '24/7', label: 'Soporte', icon: '🎧', color: 'pink' },
+            { number: '100%', label: 'Seguro', icon: '🔒', color: 'purple' },
+          ].map((stat, idx) => (
+            <StatsCardEnhanced
+              key={idx}
+              title={stat.label}
+              value={stat.number}
+              icon={stat.icon}
+              trend="up"
+              color={stat.color}
+              neonEffect
+            />
+          ))}
         </div>
 
         {/* Contact Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-            Contactanos
+        <NeonCard neonColor="gradient" className="p-8">
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+            📞 Contactanos
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -101,7 +110,7 @@ const AboutPage = () => {
               </div>
             ))}
           </div>
-        </div>
+        </NeonCard>
       </div>
     </div>
   )

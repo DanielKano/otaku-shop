@@ -1,25 +1,49 @@
-import { createContext, useState, useCallback } from 'react'
+import { createContext, useState, useCallback, useContext } from 'react'
+import { NotificationContext } from './NotificationContext'
 
 export const CartContext = createContext()
 
 export const CartProvider = ({ children }) => {
   const [items, setItems] = useState([])
+  const { addNotification } = useContext(NotificationContext) || { addNotification: () => {} }
 
   const addItem = useCallback((product, quantity = 1) => {
     setItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id)
+      const maxStock = product.stock || 0
 
       if (existingItem) {
+        // Validar que no se exceda el stock disponible
+        const newQuantity = existingItem.quantity + quantity
+        const limitedQuantity = Math.min(newQuantity, maxStock)
+        
+        if (newQuantity > maxStock) {
+          addNotification?.({
+            message: `⚠️ Stock insuficiente. Solo hay ${maxStock} unidades disponibles de "${product.name}"`,
+            type: 'warning'
+          })
+        }
+
         return prevItems.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: limitedQuantity }
             : item,
         )
       }
 
-      return [...prevItems, { ...product, quantity }]
+      // Para nuevo producto, validar stock desde el inicio
+      const limitedQuantity = Math.min(quantity, maxStock)
+      
+      if (quantity > maxStock) {
+        addNotification?.({
+          message: `⚠️ Stock insuficiente. Solo hay ${maxStock} unidades disponibles de "${product.name}"`,
+          type: 'warning'
+        })
+      }
+
+      return [...prevItems, { ...product, quantity: limitedQuantity }]
     })
-  }, [])
+  }, [addNotification])
 
   const removeItem = useCallback((productId) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== productId))
@@ -32,11 +56,24 @@ export const CartProvider = ({ children }) => {
     }
 
     setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === productId ? { ...item, quantity } : item,
-      ),
+      prevItems.map((item) => {
+        if (item.id === productId) {
+          const maxStock = item.stock || 0
+          const limitedQuantity = Math.min(quantity, maxStock)
+          
+          if (quantity > maxStock) {
+            addNotification?.({
+              message: `⚠️ Stock máximo alcanzado. Solo hay ${maxStock} unidades disponibles de "${item.name}"`,
+              type: 'warning'
+            })
+          }
+          
+          return { ...item, quantity: limitedQuantity }
+        }
+        return item
+      }),
     )
-  }, [removeItem])
+  }, [removeItem, addNotification])
 
   const clearCart = useCallback(() => {
     setItems([])

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCart } from '../../hooks/useCart'
 import { useNotification } from '../../hooks/useNotification'
 import Button from '../../components/ui/Button'
+import NeonCard from '../../components/ui/NeonCard'
 import Input from '../../components/ui/Input'
 import services from '../../services'
 
@@ -22,15 +23,16 @@ const CheckoutPage = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-6xl mb-4">🛒</p>
-          <h1 className="text-2xl font-bold mb-2">Tu carrito está vacío</h1>
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <p className="text-8xl mb-6">🛒</p>
+          <h1 className="text-4xl font-bold neon-text mb-4">Tu carrito está vacío</h1>
           <Button
-            variant="primary"
+            variant="gradient"
+            size="lg"
             onClick={() => navigate('/productos')}
           >
-            Continuar Comprando
+            🛍️ Continuar Comprando
           </Button>
         </div>
       </div>
@@ -70,10 +72,10 @@ const CheckoutPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-          Checkout
+        <h1 className="text-5xl font-bold neon-text mb-8 animate-fade-in">
+          💳 Checkout
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -81,9 +83,9 @@ const CheckoutPage = () => {
           <div className="md:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Shipping Address */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                  Dirección de Envío
+              <NeonCard neonColor="purple" className="p-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  📦 Dirección de Envío
                 </h2>
                 <Input
                   label="Dirección"
@@ -106,12 +108,12 @@ const CheckoutPage = () => {
                   onChange={handleChange}
                   required
                 />
-              </div>
+              </NeonCard>
 
               {/* Payment Info */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                  Información de Pago
+              <NeonCard neonColor="cyan" className="p-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  💳 Información de Pago
                 </h2>
                 <Input
                   label="Número de Tarjeta"
@@ -140,11 +142,11 @@ const CheckoutPage = () => {
                     required
                   />
                 </div>
-              </div>
+              </NeonCard>
 
               <Button
                 type="submit"
-                variant="primary"
+                variant="gradient"
                 size="lg"
                 className="w-full"
                 loading={isLoading}
@@ -157,9 +159,9 @@ const CheckoutPage = () => {
 
           {/* Order Summary */}
           <div className="md:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 sticky top-20">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Resumen
+            <NeonCard neonColor="gradient" className="p-6 sticky top-20">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                📝 Resumen
               </h2>
               <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
                 {items.map(item => (
@@ -191,7 +193,7 @@ const CheckoutPage = () => {
                   <span>${(total + total * 0.16).toFixed(2)}</span>
                 </div>
               </div>
-            </div>
+            </NeonCard>
           </div>
         </div>
       </div>

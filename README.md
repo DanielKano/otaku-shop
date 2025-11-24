@@ -10,12 +10,11 @@ otaku-shop-fullstack/
 │   ├── src/
 │   ├── package.json
 │   └── vite.config.js
-├── backend/               # Spring Boot 3.2 + MySQL + JWT
+├── backend/               # Spring Boot 3.2 + PostgreSQL + JWT + OAuth2
 │   ├── src/
 │   ├── pom.xml
 │   └── application.properties
-├── docker-compose.yml     # Configuración local de MySQL
-├── render.yaml           # Configuración para deployment en Render
+├── docker-compose.yml     # Configuración local de PostgreSQL
 └── .gitignore
 ```
 
@@ -25,13 +24,13 @@ otaku-shop-fullstack/
 - Node.js 18+
 - Java 21
 - Maven 3.8+
-- MySQL 8.0+
+- PostgreSQL 14+
 
 ### Frontend
 ```bash
 cd frontend
 npm install
-npm run dev        # Arranca en http://localhost:5173
+npm run dev        # Arranca en http://localhost:5174
 ```
 
 ### Backend
@@ -43,46 +42,20 @@ mvn spring-boot:run  # Arranca en http://localhost:8080
 
 ### Base de Datos
 ```bash
-# Con Docker Compose (recomendado)
-docker-compose up -d
-
-# O MySQL manual
-mysql -u root -p
+# Con PostgreSQL manual
+psql -U postgres
 CREATE DATABASE otaku_shop;
-```
-
-## 🌐 Deployment en Render
-
-### Configuración Automática
-El archivo `render.yaml` configura automáticamente:
-- ✅ Backend Spring Boot como Web Service
-- ✅ Frontend React como Static Site
-- ✅ MySQL como Managed Database
-
-### Variables de Entorno Necesarias
-
-**Backend (.env):**
-```
-SPRING_DATASOURCE_URL=mysql://user:password@host:3306/otaku_shop
-SPRING_DATASOURCE_USERNAME=user
-SPRING_DATASOURCE_PASSWORD=password
-JWT_SECRET=tu_secret_key_super_segura
-JWT_EXPIRATION=86400000
-```
-
-**Frontend (.env):**
-```
-VITE_API_BASE_URL=https://tu-backend-render.onrender.com
 ```
 
 ## 📚 Documentación
 
-- [Frontend Setup](./frontend/README.md)
-- [Backend Setup](./backend/README.md)
+- [OAuth2 Setup Guide](./OAUTH2_SETUP_GUIDE.md) - Configuración de Google y Facebook Login
+- [OAuth2 Implementation Summary](./OAUTH2_IMPLEMENTATION_SUMMARY.md) - Resumen técnico
 
 ## 🔐 Seguridad
 
 - JWT para autenticación
+- OAuth2 Social Login (Google, Facebook)
 - CORS configurado
 - Validación de input
 - Contraseñas hasheadas con BCrypt
@@ -95,23 +68,15 @@ VITE_API_BASE_URL=https://tu-backend-render.onrender.com
 - Vite 5.2.11
 - Tailwind CSS 3.4.4
 - React Router 6.24.1
-- Zod para validación
 - Axios con interceptores JWT
 
 ### Backend
 - Spring Boot 3.2
 - Spring Data JPA + Hibernate
-- Spring Security 6.0
-- MySQL 8.0
+- Spring Security 6.0 + OAuth2
+- PostgreSQL 14
 - JWT (jjwt)
-- Lombok + MapStruct
-
-## 📊 Estados de la Aplicación
-
-- ✅ Frontend: 43 componentes, 15 páginas
-- ✅ Backend: 27 archivos, APIs CRUD
-- ✅ Base de datos: Esquema completo
-- 🔄 Deployment: Listo para Render
+- Lombok
 
 ## 📝 Licencia
 

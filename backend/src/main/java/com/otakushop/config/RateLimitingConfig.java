@@ -3,7 +3,6 @@ package com.otakushop.config;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
@@ -47,14 +46,5 @@ public class RateLimitingConfig {
         return Bucket.builder()
                 .addLimit(limit)
                 .build();
-    }
-
-    /**
-     * Limpia buckets antiguos periódicamente para evitar memory leaks
-     */
-    @Bean
-    public void scheduleCleanup() {
-        // En producción, implementar una tarea programada para limpiar cache
-        // Por ahora, el ConcurrentHashMap manejará el crecimiento
     }
 }

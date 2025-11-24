@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 import ProtectedRoute from '../components/auth/ProtectedRoute'
+import { OAuth2RedirectHandler } from '../components/auth/OAuth2RedirectHandler'
 
 // Pages
 import HomePage from '../pages/public/HomePage'
@@ -14,6 +15,8 @@ import FavoritesPage from '../pages/public/FavoritesPage'
 import PoliciesPage from '../pages/public/PoliciesPage'
 import LoginPage from '../pages/auth/LoginPage'
 import RegisterPage from '../pages/auth/RegisterPage'
+import ForgotPassword from '../pages/auth/ForgotPassword'
+import ResetPassword from '../pages/auth/ResetPassword'
 import NotFoundPage from '../pages/errors/NotFoundPage'
 import ClientDashboard from '../pages/client/ClientDashboard'
 import VendorDashboard from '../pages/vendor/VendorDashboard'
@@ -37,6 +40,9 @@ const AppRoutes = () => {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
           {/* Client Routes */}
           <Route

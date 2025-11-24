@@ -31,6 +31,21 @@ public class Order {
     @Column(nullable = false)
     private OrderStatus status;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal subtotal;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal shipping;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discount;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal tax;
+
+    @Column(name = "total", nullable = false, precision = 10, scale = 2)
+    private BigDecimal total;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
 

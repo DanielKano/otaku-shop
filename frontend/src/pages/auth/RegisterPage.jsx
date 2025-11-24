@@ -23,6 +23,9 @@ const RegisterPage = () => {
         role: userData.role?.toLowerCase() || 'cliente'
       }
       localStorage.setItem('token', userDataWithLowerRole.token)
+      if (userDataWithLowerRole.refreshToken) {
+        localStorage.setItem('refreshToken', userDataWithLowerRole.refreshToken)
+      }
       localStorage.setItem('user', JSON.stringify(userDataWithLowerRole))
       // Actualizar contexto de autenticación
       contextLogin(userDataWithLowerRole)

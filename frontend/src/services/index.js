@@ -1,5 +1,6 @@
 import api from './api'
 import favoriteService from './favoriteService'
+import stockReservationService from './stockReservationService'
 
 export const authService = {
   register: (data) => api.post('/auth/register', data),
@@ -78,6 +79,23 @@ export const uploadService = {
   },
 }
 
+// ✨ SERVICIO DE RESERVAS DE STOCK (Fase 2)
+export const stockReservationApiService = {
+  reserve: (data) => api.post('/stock-reservations/reserve', data),
+  update: (reservationId, quantity) => 
+    api.put(`/stock-reservations/${reservationId}/update`, { quantity }),
+  renew: (reservationId) => 
+    api.put(`/stock-reservations/${reservationId}/renew`),
+  release: (reservationId) => 
+    api.delete(`/stock-reservations/${reservationId}`),
+  checkAvailability: (data) => 
+    api.post('/stock-reservations/available', data),
+  getUserReservations: (userId) => 
+    api.get(`/stock-reservations/user/${userId}`),
+  getSessionReservations: (sessionId) => 
+    api.get(`/stock-reservations/session/${sessionId}`),
+}
+
 export default {
   authService,
   productService,
@@ -86,4 +104,6 @@ export default {
   userService,
   uploadService,
   favoriteService,
+  stockReservationService,
+  stockReservationApiService,
 }

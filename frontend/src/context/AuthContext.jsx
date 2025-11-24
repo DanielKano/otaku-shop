@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Error parsing stored user:', e)
         localStorage.removeItem('user')
         localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
       }
     }
     setIsLoading(false)
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
     localStorage.removeItem('user')
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     setError(null)
   }, [])
 

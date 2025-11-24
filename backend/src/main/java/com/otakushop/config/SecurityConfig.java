@@ -5,6 +5,10 @@ import com.otakushop.security.CustomUserDetailsService;
 import com.otakushop.security.JwtAuthenticationEntryPoint;
 import com.otakushop.security.JwtAuthenticationFilter;
 import com.otakushop.security.JwtTokenProvider;
+import com.otakushop.security.oauth2.CustomOAuth2UserService;
+import com.otakushop.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.otakushop.security.oauth2.OAuth2AuthenticationFailureHandler;
+import com.otakushop.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +36,10 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtTokenProvider jwtTokenProvider;
     private final RateLimitingFilter rateLimitingFilter;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
@@ -47,7 +55,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173", 
+            "http://localhost:5173",
+            "http://localhost:5174",
             "http://127.0.0.1:5173",
             "https://otaku-shop.onrender.com"
         ));
@@ -87,6 +96,13 @@ public class SecurityConfig {
                         .requestMatchers("/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/validate-reset-token").permitAll()
+                        // OAuth2 endpoints
+                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/login/oauth2/**").permitAll()
                         // create-superadmin eliminado de endpoints públicos - usar script SQL
                         .requestMatchers(HttpMethod.GET, "/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/{id}").permitAll()
@@ -107,6 +123,16 @@ public class SecurityConfig {
                         .requestMatchers("/favorites/**").authenticated()
                         // All other requests require authentication
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)
+                        )
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)

@@ -4,6 +4,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useNotification } from '../../hooks/useNotification'
 import services from '../../services'
 import Button from '../../components/ui/Button'
+import StatsCardEnhanced from '../../components/ui/StatsCardEnhanced'
+import NeonCard from '../../components/ui/NeonCard'
 import CreateUserModal from '../../components/modals/CreateUserModal'
 import ChangeRolesModal from '../../components/modals/ChangeRolesModal'
 import CategoriesModal from '../../components/modals/CategoriesModal'
@@ -73,20 +75,20 @@ const SuperAdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header with Back Button */}
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-8 flex justify-between items-start animate-fade-in">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-              Panel SuperAdministrador
+            <h1 className="text-5xl font-bold neon-text">
+              🔑 Panel SuperAdministrador
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">
               Control total de la plataforma, {user?.name}
             </p>
           </div>
           <Button 
-            variant="outline"
+            variant="glass"
             onClick={() => navigate(-1)}
             className="whitespace-nowrap"
           >
@@ -96,84 +98,101 @@ const SuperAdminDashboard = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {[
-            { title: 'Usuarios', value: stats.totalUsers, color: 'blue' },
-            { title: 'Productos', value: stats.totalProducts, color: 'green' },
-            { title: 'Órdenes', value: stats.totalOrders, color: 'purple' },
-            { title: 'Ingresos', value: `$${stats.totalRevenue.toFixed(2)}`, color: 'yellow' },
-          ].map((stat, idx) => (
-            <div key={idx} className={`bg-${stat.color}-50 dark:bg-${stat.color}-900/20 rounded-lg p-6 border border-${stat.color}-200 dark:border-${stat.color}-700`}>
-              <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
-                {stat.title}
-              </h3>
-              <p className={`text-3xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>
-                {stat.value}
-              </p>
-            </div>
-          ))}
+          <StatsCardEnhanced
+            title="Usuarios"
+            value={stats.totalUsers}
+            icon="👥"
+            trend="neutral"
+            color="purple"
+            neonEffect
+          />
+          <StatsCardEnhanced
+            title="Productos"
+            value={stats.totalProducts}
+            icon="📦"
+            trend="up"
+            color="cyan"
+            neonEffect
+          />
+          <StatsCardEnhanced
+            title="Órdenes"
+            value={stats.totalOrders}
+            icon="📝"
+            trend="neutral"
+            color="pink"
+            neonEffect
+          />
+          <StatsCardEnhanced
+            title="Ingresos"
+            value={`$${stats.totalRevenue.toFixed(2)}`}
+            icon="💰"
+            trend="up"
+            color="green"
+            neonEffect
+          />
         </div>
 
         {/* Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* User Management */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Gestión de Usuarios
+          <NeonCard neonColor="purple" className="p-6">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+              👥 Gestión de Usuarios
             </h2>
             <div className="space-y-3">
               <Button 
-                variant="primary" 
+                variant="gradient" 
                 className="w-full"
                 onClick={handleViewUsers}
               >
                 Ver Todos los Usuarios
               </Button>
               <Button 
-                variant="outline" 
+                variant="gradient-outline" 
                 className="w-full"
                 onClick={() => setIsCreateUserModalOpen(true)}
               >
-                Crear Usuario
+                ➕ Crear Usuario
               </Button>
               <Button 
-                variant="danger" 
+                variant="animated-neon" 
                 className="w-full"
                 onClick={() => setIsChangeRolesModalOpen(true)}
               >
-                Cambiar Roles
+                🔄 Cambiar Roles
               </Button>
             </div>
-          </div>
+          </NeonCard>
 
           {/* Product Management */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Gestión de Productos
+          <NeonCard neonColor="cyan" className="p-6">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+              📦 Gestión de Productos
             </h2>
             <div className="space-y-3">
               <Button 
-                variant="primary" 
+                variant="gradient" 
                 className="w-full"
                 onClick={handleViewProducts}
               >
                 Ver Todos los Productos
               </Button>
               <Button 
-                variant="outline" 
+                variant="gradient-outline" 
                 className="w-full"
                 onClick={() => setIsCategoriesModalOpen(true)}
               >
-                Ver Categorías
+                📊 Ver Categorías
               </Button>
               <Button 
-                variant="danger" 
+                variant="animated-neon" 
                 className="w-full"
                 onClick={() => setIsReportsModalOpen(true)}
               >
-                Gestionar Denuncias
+                ⚠️ Gestionar Denuncias
               </Button>
             </div>
-          </div>
+          </NeonCard>
         </div>
       </div>
 
