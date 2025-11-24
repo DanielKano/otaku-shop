@@ -1,47 +1,42 @@
 services:
+  # ===== DATABASE =====
+  - type: pserv
+    name: otaku-shop-db
+    plan: free
+    databaseName: otaku_shop
+    databaseUser: otaku_user
+
   # ===== BACKEND =====
   - type: web
     name: otaku-shop-backend
     runtime: java
-    buildCommand: cd backend && mvn clean install -DskipTests
-    startCommand: cd backend && java -jar target/otaku-shop-0.0.1-SNAPSHOT.jar
+    plan: free
+    buildCommand: cd backend && mvn clean package -DskipTests
+    startCommand: cd backend && java -jar target/otaku-shop-backend-0.1.0.jar
     envVars:
       - key: SPRING_DATASOURCE_URL
-        scope: build
-        sync: false
-        value: ${DATABASE_URL}
-      - key: SPRING_DATASOURCE_USERNAME
-        scope: build
-        sync: false
-        value: ${DB_USER}
-      - key: SPRING_DATASOURCE_PASSWORD
-        scope: build
-        sync: false
-        value: ${DB_PASSWORD}
+        fromDatabase:
+          name: otaku-shop-db
+          property: connectionString
       - key: JWT_SECRET
-        scope: build
-        sync: false
-        value: ${JWT_SECRET}
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: "86400000"
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
-        value: update
+        value: "update"
       - key: PORT
         value: "8080"
 
   # ===== FRONTEND =====
-  - type: static_site
+  - type: web
     name: otaku-shop-frontend
-    buildCommand: cd frontend && npm ci && npm run build
+    runtime: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: ${BACKEND_URL}
-
-  # ===== DATABASE =====
-  - type: pserv
-    name: otaku-shop-db
-    ipAllowList: []
-    plan: starter
-    dbName: otaku_shop
-    user: otaku_user
-    passwordEnvVarKey: DB_PASSWORD
-    version: "8"
+        fromService:
+          type: web
+          name: otaku-shop-backend
+          property: host
