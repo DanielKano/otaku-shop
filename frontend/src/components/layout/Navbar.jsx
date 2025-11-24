@@ -19,12 +19,12 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-md">
+    <nav className="glass-effect sticky top-0 z-50 border-b border-white/10 dark:border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <Link to="/" className="flex items-center space-x-2 group">
+            <span className="text-2xl font-bold neon-text group-hover:animate-pulse-neon">
               🎌 Otaku Shop
             </span>
           </Link>

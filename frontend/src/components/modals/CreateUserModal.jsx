@@ -76,8 +76,9 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="glass-effect rounded-xl shadow-2xl max-w-md w-full border border-neon-purple/30 animate-fade-in"
+           style={{ animationDelay: '0.1s' }}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">

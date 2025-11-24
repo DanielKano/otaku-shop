@@ -40,7 +40,7 @@ const ProductCard = ({ product, onViewDetails }) => {
   const isOutOfStock = !product.stock || product.stock === 0
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+    <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover-lift transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-neon-purple/50 dark:hover:border-neon-purple/50 animate-fade-in">
       {/* Product Image */}
       <div className="aspect-square bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative group">
         {product.imageUrl ? (

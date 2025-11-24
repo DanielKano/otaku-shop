@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   VARIABLES GLOBALES OTAKU SHOP
+   ======================================== */
+@layer base {
+  :root {
+    /* Paleta Neon - Tema Otaku */
+    --color-neon-purple: #b55cff;
+    --color-neon-pink: #ff3ea5;
+    --color-neon-cyan: #42e2f4;
+    
+    /* Glass Effect */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    
+    /* Shadows Neon */
+    --shadow-neon-purple: 0 0 20px rgba(181, 92, 255, 0.3);
+    --shadow-neon-cyan: 0 0 20px rgba(66, 226, 244, 0.3);
+    
+    /* Transiciones */
+    --transition-fast: 150ms ease-in-out;
+    --transition-base: 300ms ease-in-out;
+    --transition-slow: 500ms ease-in-out;
+  }
+  
+  .dark {
+    --glass-bg: rgba(0, 0, 0, 0.3);
+    --glass-border: rgba(255, 255, 255, 0.05);
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -15,11 +45,95 @@ html {
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-white;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
 #root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+}
+
+/* ========================================
+   UTILIDADES PERSONALIZADAS
+   ======================================== */
+@layer utilities {
+  /* Glass Morphism */
+  .glass-effect {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+  }
+  
+  /* Texto Neon Gradiente */
+  .neon-text {
+    background: linear-gradient(45deg, var(--color-neon-purple), var(--color-neon-pink), var(--color-neon-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Hover con elevación */
+  .hover-lift {
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  .dark .hover-lift:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ========================================
+   ANIMACIONES
+   ======================================== */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-neon {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--color-neon-purple),
+                0 0 10px var(--color-neon-purple);
+  }
+  50% {
+    box-shadow: 0 0 10px var(--color-neon-pink),
+                0 0 20px var(--color-neon-pink),
+                0 0 30px var(--color-neon-pink);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.animate-pulse-neon {
+  animation: pulse-neon 2s ease-in-out infinite;
 }

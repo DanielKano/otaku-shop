@@ -15,12 +15,16 @@ const Button = forwardRef(
     ref,
   ) => {
     const variantStyles = {
-      primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-      secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-900',
-      success: 'bg-green-600 hover:bg-green-700 text-white',
-      danger: 'bg-red-600 hover:bg-red-700 text-white',
-      outline: 'border border-gray-300 hover:bg-gray-100 text-gray-900',
-      ghost: 'hover:bg-gray-100 text-gray-900',
+      primary: 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg',
+      secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white',
+      success: 'bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg',
+      danger: 'bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg',
+      outline: 'border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white',
+      ghost: 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white',
+      // Nuevas variantes con efectos neon
+      neon: 'bg-gradient-to-r from-neon-purple to-neon-pink text-white hover:shadow-[0_0_20px_rgba(181,92,255,0.5)] hover:-translate-y-0.5 transition-all',
+      'neon-outline': 'border-2 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-gray-900 dark:hover:text-white transition-all',
+      glass: 'glass-effect hover:bg-white/10 dark:hover:bg-black/30 border border-white/20 backdrop-blur-md',
     }
 
     const sizeStyles = {
