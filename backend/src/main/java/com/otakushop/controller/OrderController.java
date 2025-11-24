@@ -19,7 +19,7 @@ import java.util.Map;
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${cors.allowedOrigins}")
 public class OrderController {
     
     private final OrderService orderService;

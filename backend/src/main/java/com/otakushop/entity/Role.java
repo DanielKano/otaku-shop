@@ -17,8 +17,10 @@ public enum Role {
     }
 
     public static Role fromValue(String value) {
+        if (value == null) return null;
         for (Role role : Role.values()) {
-            if (role.value.equals(value)) {
+            // Comparar tanto por valor como por nombre (case-insensitive)
+            if (role.value.equalsIgnoreCase(value) || role.name().equalsIgnoreCase(value)) {
                 return role;
             }
         }

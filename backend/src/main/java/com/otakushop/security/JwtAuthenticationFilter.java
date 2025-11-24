@@ -42,11 +42,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String userEmail = tokenProvider.getUserEmailFromJWT(jwt);
                 var userDetails = userDetailsService.loadUserByUsername(userEmail);
 
+                log.debug("User authorities: {}", userDetails.getAuthorities());
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("User authenticated with email: {}", userEmail);
+            } else if (StringUtils.hasText(jwt)) {
+                log.warn("JWT validation failed for token");
+            } else {
+                log.debug("No JWT token found in request");
             }
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);
@@ -62,14 +69,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 (method.equals("POST") && path.equals("/auth/register")) ||
                 (method.equals("POST") && path.equals("/auth/login")) ||
                 (method.equals("GET") && path.equals("/products")) ||
-                (method.equals("GET") && path.startsWith("/products/")));
+                (method.equals("GET") && path.startsWith("/products/")) ||
+                (method.equals("GET") && path.startsWith("/favorites/check/")));
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
+        log.debug("Authorization header: {}", bearerToken);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+            String jwt = bearerToken.substring(7);
+            log.debug("JWT extracted: {}...", jwt.substring(0, Math.min(20, jwt.length())));
+            return jwt;
         }
+        log.warn("No valid Authorization header found");
         return null;
     }
 }

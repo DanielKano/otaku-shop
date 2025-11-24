@@ -29,5 +29,6 @@ public class RegisterRequest {
     @NotBlank(message = "Confirmación de contraseña requerida")
     private String confirmPassword;
 
+    @Builder.Default
     private String role = "cliente";
 }

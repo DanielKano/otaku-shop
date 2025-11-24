@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: otaku-shop-mysql
+  postgres:
+    image: postgres:15-alpine
+    container_name: otaku-shop-postgres
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: otaku_shop
-      MYSQL_USER: otaku_user
-      MYSQL_PASSWORD: otaku_password
+      POSTGRES_DB: ${DB_NAME:-otaku_shop}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev123}
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U otaku_user -d otaku_shop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - otaku-network
 
@@ -28,13 +28,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/otaku_shop
-      SPRING_DATASOURCE_USERNAME: otaku_user
-      SPRING_DATASOURCE_PASSWORD: otaku_password
-      JWT_SECRET: desarrollo-secret-key-12345
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-otaku_shop}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-dev123}
+      JWT_SECRET: ${JWT_SECRET:-CHANGE_ME_GENERATE_WITH_OPENSSL_RAND_BASE64_64}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     networks:
       - otaku-network
@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  mysql_data:
+  postgres_data:
 
 networks:
   otaku-network:

@@ -8,6 +8,7 @@ import lombok.*;
 @Builder
 public class AuthResponse {
     private String token;
+    @Builder.Default
     private String type = "Bearer";
     private Long id;
     private String name;

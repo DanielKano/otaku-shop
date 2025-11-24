@@ -30,7 +30,8 @@ public class ProductService {
      */
     public List<ProductDTO> getAllApprovedProducts() {
         return productRepository.findAll().stream()
-                .filter(p -> "APPROVED".equals(p.getStatus()) && p.getActive())
+                .filter(p -> "APPROVED".equals(p.getStatus()) && 
+                           (p.getActive() != null && p.getActive()))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -40,7 +41,8 @@ public class ProductService {
      */
     public List<ProductDTO> getPendingProducts() {
         return productRepository.findAll().stream()
-                .filter(p -> "PENDING".equals(p.getStatus()) && p.getActive())
+                .filter(p -> "PENDING".equals(p.getStatus()) && 
+                           (p.getActive() != null && p.getActive()))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -49,7 +51,7 @@ public class ProductService {
      * Aprueba un producto (cambiar estado a APPROVED)
      */
     @Transactional
-    public ProductDTO approveProduct(Long productId) {
+    public ProductDTO approveProduct(Long productId, Long adminId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         
@@ -57,8 +59,12 @@ public class ProductService {
             throw new RuntimeException("Solo se pueden aprobar productos en estado PENDING");
         }
         
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+        
         product.setStatus("APPROVED");
         product.setApprovedAt(java.time.LocalDateTime.now());
+        product.setApprovedBy(admin);
         Product savedProduct = productRepository.save(product);
         return convertToDTO(savedProduct);
     }
@@ -67,7 +73,7 @@ public class ProductService {
      * Rechaza un producto (cambiar estado a REJECTED)
      */
     @Transactional
-    public ProductDTO rejectProduct(Long productId, String reason) {
+    public ProductDTO rejectProduct(Long productId, String reason, Long adminId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         
@@ -75,9 +81,13 @@ public class ProductService {
             throw new RuntimeException("Solo se pueden rechazar productos en estado PENDING");
         }
         
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+        
         product.setStatus("REJECTED");
         product.setRejectionReason(reason);
         product.setApprovedAt(java.time.LocalDateTime.now());
+        product.setApprovedBy(admin);
         Product savedProduct = productRepository.save(product);
         return convertToDTO(savedProduct);
     }
@@ -120,7 +130,7 @@ public class ProductService {
                 .stock(request.getStock())
                 .imageUrl(request.getImageUrl())
                 .vendor(vendor)
-                .active(request.getActive())
+                .active(request.getActive() != null ? request.getActive() : true)  // Default to true if null
                 .build();
 
         product = productRepository.save(product);
@@ -148,7 +158,9 @@ public class ProductService {
         product.setCategory(request.getCategory());
         product.setStock(request.getStock());
         product.setImageUrl(request.getImageUrl());
-        product.setActive(request.getActive());
+        if (request.getActive() != null) {
+            product.setActive(request.getActive());
+        }
 
         product = productRepository.save(product);
         return convertToDTO(product);
@@ -169,6 +181,56 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    /**
+     * Obtiene los productos de un vendedor específico, filtrando por estado
+     * Estados válidos: PENDING, APPROVED, REJECTED, CANCELLED, DELETED
+     */
+    public List<ProductDTO> getProductsByVendorAndStatus(Long vendorId, String status) {
+        return productRepository.findAll().stream()
+                .filter(p -> p.getVendor().getId().equals(vendorId))
+                .filter(p -> p.getStatus() != null && p.getStatus().equals(status))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene todos los productos de un vendedor específico
+     */
+    public List<ProductDTO> getProductsByVendor(Long vendorId) {
+        return productRepository.findAll().stream()
+                .filter(p -> p.getVendor().getId().equals(vendorId))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Cancela un producto (cambiar estado a CANCELLED)
+     * Solo se puede cancelar si está en estado PENDING o APPROVED
+     */
+    @Transactional
+    public ProductDTO cancelProduct(Long productId, Long vendorId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        if (!product.getVendor().getId().equals(vendorId)) {
+            throw new RuntimeException("No tienes permiso para cancelar este producto");
+        }
+
+        String currentStatus = product.getStatus();
+        if (!("PENDING".equals(currentStatus) || "APPROVED".equals(currentStatus))) {
+            throw new IllegalArgumentException(
+                "No se puede cancelar un producto en estado " + currentStatus + 
+                ". Solo se pueden cancelar productos PENDING o APPROVED"
+            );
+        }
+
+        product.setStatus("CANCELLED");
+        product.setActive(false);
+        product.setUpdatedAt(java.time.LocalDateTime.now());
+        Product savedProduct = productRepository.save(product);
+        return convertToDTO(savedProduct);
+    }
+
     private ProductDTO convertToDTO(Product product) {
         return ProductDTO.builder()
                 .id(product.getId())
@@ -183,6 +245,7 @@ public class ProductService {
                 .reviews(product.getReviews())
                 .vendorId(product.getVendor().getId())
                 .active(product.getActive())
+                .status(product.getStatus())  // Add status mapping
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();

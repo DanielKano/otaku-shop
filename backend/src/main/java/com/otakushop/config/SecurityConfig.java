@@ -81,10 +81,25 @@ public class SecurityConfig {
                         .requestMatchers("/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/create-superadmin").permitAll()
+                        // create-superadmin eliminado de endpoints públicos - usar script SQL
                         .requestMatchers(HttpMethod.GET, "/products").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
-                        // Protected endpoints
+                        .requestMatchers(HttpMethod.GET, "/products/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/products/category/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/products/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/products/filter").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll() // Permitir descargar imágenes
+                        // Favorites check endpoint (allow anonymous to return false)
+                        .requestMatchers(HttpMethod.GET, "/favorites/check/**").permitAll()
+                        // Protected endpoints (require authentication)
+                        .requestMatchers(HttpMethod.GET, "/products/pending").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/products/approved").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/products/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/products/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/products/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/upload/**").authenticated() // Requerir autenticación para subir
+                        // Favorites endpoints (require authentication)
+                        .requestMatchers("/favorites/**").authenticated()
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

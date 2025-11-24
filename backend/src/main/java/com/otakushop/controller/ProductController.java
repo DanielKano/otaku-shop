@@ -6,26 +6,93 @@ import com.otakushop.service.ProductService;
 import com.otakushop.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "${cors.allowedOrigins}")
+@Slf4j
 public class ProductController {
     private final ProductService productService;
     private final SecurityUtil securityUtil;
 
-    @GetMapping
-    public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        // Obtener solo productos aprobados (para clientes públicos)
+    // ===== ENDPOINTS DE APROBACIÓN (ADMIN) - DEBEN VENIR PRIMERO =====
+
+    /**
+     * Obtiene los productos pendientes de aprobación (solo ADMIN)
+     */
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ProductDTO>> getPendingProducts() {
+        List<ProductDTO> products = productService.getPendingProducts();
+        return ResponseEntity.ok(products);
+    }
+
+    /**
+     * Obtiene todos los productos aprobados y activos (solo ADMIN)
+     */
+    @GetMapping("/approved")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ProductDTO>> getApprovedProducts() {
         List<ProductDTO> products = productService.getAllApprovedProducts();
         return ResponseEntity.ok(products);
+    }
+
+    /**
+     * Aprueba un producto (solo ADMIN)
+     */
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProductDTO> approveProduct(
+            @PathVariable Long id,
+            @RequestBody(required = false) String rejectionReason) {
+        Long adminId = securityUtil.getCurrentUserId();
+        ProductDTO product = productService.approveProduct(id, adminId);
+        return ResponseEntity.ok(product);
+    }
+
+    /**
+     * Rechaza un producto (solo ADMIN)
+     */
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProductDTO> rejectProduct(
+            @PathVariable Long id,
+            @RequestBody String rejectionReason) {
+        Long adminId = securityUtil.getCurrentUserId();
+        ProductDTO product = productService.rejectProduct(id, rejectionReason, adminId);
+        return ResponseEntity.ok(product);
+    }
+
+    // ===== ENDPOINTS GENERALES =====
+
+    @GetMapping
+    public ResponseEntity<?> getAllProducts(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "12") int limit) {
+        
+        // Obtener solo productos aprobados (para clientes públicos)
+        List<ProductDTO> approved = productService.getAllApprovedProducts();
+        
+        // Retornar con estructura esperada por frontend
+        Map<String, Object> response = new HashMap<>();
+        response.put("products", approved);
+        response.put("pages", 1);
+        response.put("total", approved.size());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -82,37 +149,57 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
-    // ===== ENDPOINTS DE APROBACIÓN (ADMIN) =====
-
     /**
-     * Obtiene los productos pendientes de aprobación (solo ADMIN)
+     * Obtiene los productos del vendedor actual, opcionalmente filtrados por estado
+     * Estados: PENDING, APPROVED, REJECTED, CANCELLED, DELETED
      */
-    @GetMapping("/admin/pending")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ProductDTO>> getPendingProducts() {
-        List<ProductDTO> products = productService.getPendingProducts();
-        return ResponseEntity.ok(products);
+    @GetMapping("/myproducts")
+    @PreAuthorize("hasRole('VENDEDOR')")
+    public ResponseEntity<?> getMyProducts(
+            @RequestParam(required = false) String status) {
+        Long vendorId = securityUtil.getCurrentUserId();
+        List<ProductDTO> products;
+
+        if (status != null && !status.isEmpty()) {
+            products = productService.getProductsByVendorAndStatus(vendorId, status);
+        } else {
+            products = productService.getProductsByVendor(vendorId);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("products", products);
+        response.put("count", products.size());
+        response.put("status", status != null ? status : "ALL");
+        return ResponseEntity.ok(response);
     }
 
     /**
-     * Aprueba un producto (solo ADMIN)
+     * Cancela un producto del vendedor
+     * Solo se puede cancelar si está en estado PENDING o APPROVED
      */
-    @PostMapping("/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProductDTO> approveProduct(@PathVariable Long id) {
-        ProductDTO product = productService.approveProduct(id);
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('VENDEDOR')")
+    public ResponseEntity<ProductDTO> cancelProduct(@PathVariable Long id) {
+        Long vendorId = securityUtil.getCurrentUserId();
+        ProductDTO product = productService.cancelProduct(id, vendorId);
         return ResponseEntity.ok(product);
     }
 
-    /**
-     * Rechaza un producto (solo ADMIN)
-     */
-    @PostMapping("/{id}/reject")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProductDTO> rejectProduct(
-            @PathVariable Long id,
-            @RequestParam String reason) {
-        ProductDTO product = productService.rejectProduct(id, reason);
-        return ResponseEntity.ok(product);
+    // Debug endpoint to check all products in database
+    @GetMapping("/debug/all")
+    public ResponseEntity<?> debugAllProducts() {
+        List<ProductDTO> all = productService.getAllProducts();
+        Map<String, Object> debug = new HashMap<>();
+        debug.put("totalProducts", all.size());
+        debug.put("products", all);
+        
+        log.debug("=== DEBUG ALL PRODUCTS ===");
+        for (ProductDTO p : all) {
+            log.debug("Product: {} | ID: {} | Status: {} | Active: {}", 
+                    p.getName(), p.getId(), p.getStatus(), p.getActive());
+        }
+        log.debug("========================");
+        
+        return ResponseEntity.ok(debug);
     }
 }

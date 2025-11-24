@@ -27,11 +27,12 @@ public class User {
     @Column(nullable = false)
     private String phone;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = RoleConverter.class)
     @Column(nullable = false)
     private Role role;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)

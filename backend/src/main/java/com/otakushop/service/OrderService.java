@@ -59,7 +59,8 @@ public class OrderService {
         // Procesar los items
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (CreateOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
-            Product product = productRepository.findById(itemRequest.getProductId())
+            // Usar bloqueo pesimista para prevenir race conditions en stock
+            Product product = productRepository.findByIdForUpdate(itemRequest.getProductId())
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Producto no encontrado: " + itemRequest.getProductId()));
             
@@ -150,9 +151,11 @@ public class OrderService {
             throw new IllegalArgumentException("No se puede cancelar una orden que ya fue enviada");
         }
         
-        // Restaurar stock de productos
+        // Restaurar stock de productos con bloqueo pesimista
         for (OrderItem item : order.getItems()) {
-            Product product = item.getProduct();
+            Product product = productRepository.findByIdForUpdate(item.getProduct().getId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Producto no encontrado: " + item.getProduct().getId()));
             product.setStock(product.getStock() + item.getQuantity());
             productRepository.save(product);
         }

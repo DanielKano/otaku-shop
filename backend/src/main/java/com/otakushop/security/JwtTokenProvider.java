@@ -24,7 +24,7 @@ public class JwtTokenProvider {
                 .claim("role", role)
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), SignatureAlgorithm.HS512)
+                .signWith(key())
                 .compact();
     }
 
@@ -38,12 +38,13 @@ public class JwtTokenProvider {
     }
 
     public Long getUserIdFromJWT(String token) {
-        return Long.parseLong(Jwts.parser()
+        Number userId = (Number) Jwts.parser()
                 .verifyWith((javax.crypto.SecretKey) key())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("userId", String.class));
+                .get("userId");
+        return userId != null ? userId.longValue() : null;
     }
 
     public String getRoleFromJWT(String token) {
@@ -61,6 +62,7 @@ public class JwtTokenProvider {
                     .verifyWith((javax.crypto.SecretKey) key())
                     .build()
                     .parseSignedClaims(authToken);
+            log.debug("JWT token validated successfully");
             return true;
         } catch (MalformedJwtException ex) {
             log.error("Invalid JWT token: {}", ex.getMessage());
@@ -70,6 +72,8 @@ public class JwtTokenProvider {
             log.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
             log.error("JWT claims string is empty: {}", ex.getMessage());
+        } catch (Exception ex) {
+            log.error("JWT validation error: {}", ex.getMessage(), ex);
         }
         return false;
     }

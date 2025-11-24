@@ -6,7 +6,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+    @Index(name = "idx_product_category", columnList = "category"),
+    @Index(name = "idx_product_status", columnList = "status"),
+    @Index(name = "idx_product_vendor", columnList = "vendor_id"),
+    @Index(name = "idx_product_active_status", columnList = "active, status")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,15 +37,18 @@ public class Product {
     private String category;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer stock = 0;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    @Column(name = "rating", nullable = false)
+    @Column(name = "rating", nullable = true)
+    @Builder.Default
     private Double rating = 0.0;
 
-    @Column(name = "reviews", nullable = false)
+    @Column(name = "reviews", nullable = true)
+    @Builder.Default
     private Integer reviews = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -48,13 +56,14 @@ public class Product {
     private User vendor;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
     @Column(nullable = false)
     @Builder.Default
     private String status = "PENDING";  // PENDING, APPROVED, REJECTED
 
-    @Column(name = "rejection_reason")
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
 
     @Column(name = "approved_at")
@@ -74,6 +83,8 @@ public class Product {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (rating == null) rating = 0.0;
+        if (reviews == null) reviews = 0;
     }
 
     @PreUpdate

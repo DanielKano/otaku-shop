@@ -29,5 +29,6 @@ public class ProductRequest {
 
     private String imageUrl;
 
+    @Builder.Default
     private Boolean active = true;
 }

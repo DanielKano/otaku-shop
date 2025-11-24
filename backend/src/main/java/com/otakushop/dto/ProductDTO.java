@@ -21,6 +21,7 @@ public class ProductDTO {
     private Integer reviews;
     private Long vendorId;
     private Boolean active;
+    private String status;  // PENDING, APPROVED, REJECTED
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
