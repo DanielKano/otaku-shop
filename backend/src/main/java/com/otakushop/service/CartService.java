@@ -63,24 +63,37 @@ public class CartService {
         Product product = productRepository.findById(request.getProductId())
             .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         
-        // Validaciones
+        // Validaciones básicas
         if (request.getQuantity() <= 0) {
             throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
         }
         
-        if (product.getStock() < request.getQuantity()) {
-            throw new IllegalArgumentException("Stock insuficiente para este producto");
-        }
-        
-        // Si ya existe en el carrito, incrementar cantidad
+        // Si ya existe en el carrito, validar cantidad total
         CartItem existingItem = cartItemRepository
             .findByUserIdAndProductId(userId, request.getProductId())
             .orElse(null);
         
         if (existingItem != null) {
-            existingItem.addQuantity(request.getQuantity());
+            int newTotalQuantity = existingItem.getQuantity() + request.getQuantity();
+            
+            // ✅ VALIDACIÓN CRÍTICA: Total en carrito no puede exceder stock
+            if (newTotalQuantity > product.getStock()) {
+                throw new IllegalArgumentException(
+                    String.format("Stock insuficiente. Máximo disponible: %d, Ya tienes en carrito: %d",
+                        product.getStock(), existingItem.getQuantity())
+                );
+            }
+            
+            existingItem.setQuantity(newTotalQuantity);
             CartItem updated = cartItemRepository.save(existingItem);
             return convertToDTO(updated);
+        }
+        
+        // Nuevo item: validar stock inicial
+        if (product.getStock() < request.getQuantity()) {
+            throw new IllegalArgumentException(
+                String.format("Stock insuficiente. Disponible: %d", product.getStock())
+            );
         }
         
         // Crear nuevo item
@@ -111,8 +124,12 @@ public class CartService {
             throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
         }
         
-        if (cartItem.getProduct().getStock() < quantity) {
-            throw new IllegalArgumentException("Stock insuficiente para esta cantidad");
+        // ✅ VALIDACIÓN CRÍTICA: No permitir cantidad mayor al stock
+        if (quantity > cartItem.getProduct().getStock()) {
+            throw new IllegalArgumentException(
+                String.format("Stock insuficiente. Máximo disponible: %d",
+                    cartItem.getProduct().getStock())
+            );
         }
         
         cartItem.setQuantity(quantity);

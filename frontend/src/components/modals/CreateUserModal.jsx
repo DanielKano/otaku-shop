@@ -156,7 +156,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
               <option value="cliente">Cliente</option>
               <option value="vendedor">Vendedor</option>
               <option value="admin">Admin</option>
-              <option value="superadmin">SuperAdmin</option>
+              {/* superadmin eliminado - solo creación manual en BD */}
             </select>
           </div>
 

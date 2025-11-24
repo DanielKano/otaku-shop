@@ -20,6 +20,15 @@ const ProductCard = ({ product, onViewDetails }) => {
       return
     }
 
+    // ✅ Validar contra stock disponible
+    if (quantity > product.stock) {
+      addNotification({
+        message: `Solo hay ${product.stock} unidades disponibles`,
+        type: 'error',
+      })
+      return
+    }
+
     addItem(product, quantity)
     addNotification({
       message: `${product.name} agregado al carrito`,
@@ -98,9 +107,10 @@ const ProductCard = ({ product, onViewDetails }) => {
             <span className="flex-1 text-center">{quantity}</span>
             <button
               onClick={() =>
-                setQuantity(Math.min(product.stock || 99, quantity + 1))
+                setQuantity(Math.min(product.stock || 1, quantity + 1))
               }
-              className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+              disabled={quantity >= product.stock}
+              className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               +
             </button>

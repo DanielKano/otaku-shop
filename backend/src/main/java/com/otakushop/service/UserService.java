@@ -19,9 +19,26 @@ public class UserService {
     private final SecurityUtil securityUtil;
 
     public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        List<User> allUsers = userRepository.findAll();
+        
+        // Si es SUPERADMIN, puede ver todos los usuarios
+        if (securityUtil.hasRole("SUPERADMIN")) {
+            return allUsers.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+        }
+        
+        // Si es ADMIN, solo puede ver CLIENTE y VENDEDOR (no otros ADMIN ni SUPERADMIN)
+        if (securityUtil.hasRole("ADMIN")) {
+            return allUsers.stream()
+                    .filter(user -> user.getRole() == Role.CLIENTE || 
+                                   user.getRole() == Role.VENDEDOR)
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+        }
+        
+        // Otros roles no tienen acceso (ya protegido por @PreAuthorize)
+        return List.of();
     }
 
     public UserResponse getUserById(Long id) {

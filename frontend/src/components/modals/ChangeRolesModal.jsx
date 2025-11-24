@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import Button from '../ui/Button'
 import services from '../../services'
 
-const ROLES = ['cliente', 'vendedor', 'admin', 'superadmin']
+const ROLES = ['cliente', 'vendedor', 'admin']  // superadmin eliminado - solo creación manual en BD
 const ROLE_LABELS = {
   cliente: 'Cliente',
   vendedor: 'Vendedor',
   admin: 'Admin',
-  superadmin: 'SuperAdmin',
+  superadmin: 'SuperAdmin',  // Solo para mostrar, no para seleccionar
 }
 
 const ChangeRolesModal = ({ isOpen, onClose, onRoleChanged }) => {
