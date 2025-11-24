@@ -51,14 +51,14 @@ const ProductsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Nuestros Productos
+        <div className="mb-8 text-center animate-fade-in">
+          <h1 className="text-5xl font-bold neon-text mb-3">
+            🎌 Nuestros Productos
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
             Descubre nuestra amplia colección de productos otaku
           </p>
         </div>
@@ -67,9 +67,9 @@ const ProductsPage = () => {
         <div className="md:hidden mb-4">
           <button
             onClick={() => setFilterOpen(!filterOpen)}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium"
+            className="w-full px-4 py-2 bg-gradient-to-r from-neon-purple to-neon-pink text-white rounded-lg font-medium shadow-lg"
           >
-            {filterOpen ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+            {filterOpen ? '✖ Ocultar Filtros' : '🔍 Mostrar Filtros'}
           </button>
         </div>
 

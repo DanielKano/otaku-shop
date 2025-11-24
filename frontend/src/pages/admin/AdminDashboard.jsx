@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import services from '../../services'
 import Button from '../../components/ui/Button'
+import StatsCardEnhanced from '../../components/ui/StatsCardEnhanced'
+import NeonCard from '../../components/ui/NeonCard'
 import PendingProductsModal from '../../components/modals/PendingProductsModal'
 import ManageUsersModal from '../../components/modals/ManageUsersModal'
 import AdminReportsModal from '../../components/modals/AdminReportsModal'
@@ -34,30 +36,30 @@ const AdminDashboard = () => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header with Back Button */}
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-8 flex justify-between items-start animate-fade-in">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-              Panel Administrativo
+            <h1 className="text-5xl font-bold neon-text">
+              🛡️ Panel Administrativo
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">
               Administra la plataforma, {user?.name}
             </p>
           </div>
           <div className="flex gap-2">
             {user?.role === 'superadmin' && (
               <Button 
-                variant="primary"
+                variant="gradient"
                 onClick={() => navigate('/superadmin/dashboard')}
                 className="whitespace-nowrap"
               >
-                → SuperAdmin
+                ⚡ SuperAdmin
               </Button>
             )}
             <Button 
-              variant="outline"
+              variant="glass"
               onClick={() => navigate(-1)}
               className="whitespace-nowrap"
             >
@@ -68,61 +70,64 @@ const AdminDashboard = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 border border-red-200 dark:border-red-700">
-            <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
-              Productos Pendientes
-            </h3>
-            <p className="text-3xl font-bold text-red-600 dark:text-red-400">
-              {pendingCount}
-            </p>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
-            <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
-              Productos Activos
-            </h3>
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              {products.length}
-            </p>
-          </div>
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-700">
-            <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
-              Usuarios Activos
-            </h3>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-              0
-            </p>
-          </div>
+          <StatsCardEnhanced
+            title="Productos Pendientes"
+            value={pendingCount}
+            icon="⏳"
+            trend={pendingCount > 0 ? 'up' : 'neutral'}
+            trendValue={pendingCount > 0 ? `${pendingCount} pendientes` : 'Todo al día'}
+            color="purple"
+            neonEffect
+          />
+          <StatsCardEnhanced
+            title="Productos Activos"
+            value={products.length}
+            icon="✅"
+            trend="up"
+            trendValue="+5 esta semana"
+            color="cyan"
+            neonEffect
+          />
+          <StatsCardEnhanced
+            title="Usuarios Activos"
+            value="143"
+            icon="👥"
+            trend="up"
+            trendValue="+12 este mes"
+            color="pink"
+            neonEffect
+          />
         </div>
 
         {/* Actions */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Acciones de Administración
+        <NeonCard neonColor="gradient" className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+            ⚙️ Acciones de Administración
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button 
-              variant="primary" 
+              variant="neon" 
               className="w-full"
               onClick={() => setIsPendingProductsModalOpen(true)}
             >
-              Revisar Productos Pendientes
+              📋 Revisar Productos Pendientes
             </Button>
             <Button 
-              variant="primary" 
+              variant="gradient" 
               className="w-full"
               onClick={() => setIsManageUsersModalOpen(true)}
             >
-              Gestionar Usuarios
+              👥 Gestionar Usuarios
             </Button>
             <Button 
-              variant="primary" 
+              variant="animated-neon" 
               className="w-full"
               onClick={() => setIsReportsModalOpen(true)}
             >
-              Ver Reportes
+              📊 Ver Reportes
             </Button>
           </div>
-        </div>
+        </NeonCard>
       </div>
 
       <PendingProductsModal

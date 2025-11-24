@@ -1,5 +1,6 @@
 package com.otakushop.config;
 
+import com.otakushop.filter.RateLimitingFilter;
 import com.otakushop.security.CustomUserDetailsService;
 import com.otakushop.security.JwtAuthenticationEntryPoint;
 import com.otakushop.security.JwtAuthenticationFilter;
@@ -30,6 +31,7 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
@@ -107,6 +109,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

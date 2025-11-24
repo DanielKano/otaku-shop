@@ -31,11 +31,11 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
   }
 
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+    <div className="w-full max-w-md animate-fade-in">
+      <div className="glass-effect rounded-2xl shadow-2xl p-8 border-2 border-white/10 hover:border-neon-purple/30 transition-all duration-300">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-4xl font-bold neon-text mb-2">
             🎌 Otaku Shop
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -88,7 +88,7 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
           {/* Submit */}
           <Button
             type="submit"
-            variant="primary"
+            variant="gradient"
             size="lg"
             className="w-full"
             loading={isLoading}
@@ -107,17 +107,17 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
 
         {/* Social Login */}
         <div className="space-y-3 mb-6">
-          <Button variant="outline" size="lg" className="w-full">
-            Google
+          <Button variant="glass" size="lg" className="w-full">
+            🔍 Google
           </Button>
-          <Button variant="outline" size="lg" className="w-full">
-            Facebook
+          <Button variant="glass" size="lg" className="w-full">
+            📘 Facebook
           </Button>
         </div>
 
         {/* Forgot Password */}
         <div className="text-center mb-6">
-          <a href="#" className="text-blue-600 hover:text-blue-700 text-sm">
+          <a href="#" className="text-neon-cyan hover:text-neon-pink text-sm transition-colors">
             ¿Olvidaste tu contraseña?
           </a>
         </div>
@@ -128,7 +128,7 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
           <button
             type="button"
             onClick={onRegisterClick}
-            className="text-blue-600 hover:text-blue-700 font-semibold"
+            className="text-neon-purple hover:text-neon-pink font-semibold transition-colors"
           >
             Regístrate aquí
           </button>

@@ -1,9 +1,21 @@
 import { BrowserRouter as Router } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
-import { ThemeProvider } from './context/ThemeContext'
+import { ThemeProvider, useTheme } from './context/ThemeContext'
 import { NotificationProvider } from './context/NotificationContext'
+import ParticlesBackground from './components/common/ParticlesBackground'
 import AppRoutes from './routes'
+
+function AppContent() {
+  const { isDark } = useTheme()
+  
+  return (
+    <>
+      <ParticlesBackground preset="minimal" dark={isDark} density={40} />
+      <AppRoutes />
+    </>
+  )
+}
 
 function App() {
   return (
@@ -12,7 +24,7 @@ function App() {
         <CartProvider>
           <NotificationProvider>
             <Router>
-              <AppRoutes />
+              <AppContent />
             </Router>
           </NotificationProvider>
         </CartProvider>

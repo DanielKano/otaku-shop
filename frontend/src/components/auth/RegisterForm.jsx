@@ -59,11 +59,11 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
   }
 
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+    <div className="w-full max-w-md animate-fade-in">
+      <div className="glass-effect rounded-2xl shadow-2xl p-8 border-2 border-white/10 hover:border-neon-cyan/30 transition-all duration-300">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-4xl font-bold neon-text mb-2">
             🎌 Otaku Shop
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -174,11 +174,11 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
               className="ml-2 text-sm text-gray-600 dark:text-gray-400"
             >
               Acepto los{' '}
-              <a href="#" className="text-blue-600 hover:text-blue-700">
+              <a href="#" className="text-neon-purple hover:text-neon-pink transition-colors">
                 Términos y Condiciones
               </a>{' '}
               y la{' '}
-              <a href="#" className="text-blue-600 hover:text-blue-700">
+              <a href="#" className="text-neon-purple hover:text-neon-pink transition-colors">
                 Política de Privacidad
               </a>
             </label>
@@ -187,7 +187,7 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
           {/* Submit */}
           <Button
             type="submit"
-            variant="primary"
+            variant="gradient"
             size="lg"
             className="w-full"
             loading={isLoading}
@@ -203,7 +203,7 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
           <button
             type="button"
             onClick={onLoginClick}
-            className="text-blue-600 hover:text-blue-700 font-semibold"
+            className="text-neon-cyan hover:text-neon-pink font-semibold transition-colors"
           >
             Inicia sesión
           </button>
