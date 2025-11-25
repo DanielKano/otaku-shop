@@ -317,7 +317,7 @@ const VendorDashboard = () => {
                         <div className="flex items-center gap-3">
                           {product.imageUrl && (
                             <img
-                              src={product.imageUrl}
+                              src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
                               alt={product.name}
                               className="w-10 h-10 object-cover rounded"
                             />

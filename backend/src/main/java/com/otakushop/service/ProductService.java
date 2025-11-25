@@ -3,21 +3,26 @@ package com.otakushop.service;
 import com.otakushop.dto.ProductDTO;
 import com.otakushop.dto.ProductRequest;
 import com.otakushop.entity.Product;
+import com.otakushop.entity.ProductStatus;
 import com.otakushop.entity.User;
 import com.otakushop.repository.ProductRepository;
 import com.otakushop.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final FileUploadService fileUploadService;
 
     public List<ProductDTO> getAllProducts() {
         return productRepository.findAll().stream()
@@ -41,7 +46,7 @@ public class ProductService {
      */
     public List<ProductDTO> getPendingProducts() {
         return productRepository.findAll().stream()
-                .filter(p -> "PENDING".equals(p.getStatus()) && 
+                .filter(p -> ProductStatus.PENDING.equals(p.getStatus()) && 
                            (p.getActive() != null && p.getActive()))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -55,14 +60,14 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         
-        if (!"PENDING".equals(product.getStatus())) {
-            throw new RuntimeException("Solo se pueden aprobar productos en estado PENDING");
+        if (!com.otakushop.entity.ProductStatus.PENDING.equals(product.getStatus())) {
+            throw new RuntimeException("Solo se pueden aprobar productos pendientes");
         }
         
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
         
-        product.setStatus("APPROVED");
+        product.setStatus(com.otakushop.entity.ProductStatus.APPROVED);
         product.setApprovedAt(java.time.LocalDateTime.now());
         product.setApprovedBy(admin);
         Product savedProduct = productRepository.save(product);
@@ -77,14 +82,14 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         
-        if (!"PENDING".equals(product.getStatus())) {
+        if (!com.otakushop.entity.ProductStatus.PENDING.equals(product.getStatus())) {
             throw new RuntimeException("Solo se pueden rechazar productos en estado PENDING");
         }
         
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
         
-        product.setStatus("REJECTED");
+        product.setStatus(com.otakushop.entity.ProductStatus.REJECTED);
         product.setRejectionReason(reason);
         product.setApprovedAt(java.time.LocalDateTime.now());
         product.setApprovedBy(admin);
@@ -137,6 +142,17 @@ public class ProductService {
         User vendor = userRepository.findById(vendorId)
                 .orElseThrow(() -> new RuntimeException("Vendedor no encontrado"));
 
+        // Procesar imagen si viene
+        String imageUrl = null;
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+            try {
+                imageUrl = fileUploadService.uploadImage(request.getImageFile());
+            } catch (IOException e) {
+                log.error("Error al subir imagen", e);
+                throw new RuntimeException("Error al subir imagen: " + e.getMessage());
+            }
+        }
+
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -144,9 +160,9 @@ public class ProductService {
                 .originalPrice(request.getOriginalPrice())
                 .category(request.getCategory())
                 .stock(request.getStock())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl)
                 .vendor(vendor)
-                .active(request.getActive() != null ? request.getActive() : true)  // Default to true if null
+                .active(request.getActive() != null ? request.getActive() : true)
                 .build();
 
         product = productRepository.save(product);
@@ -163,7 +179,7 @@ public class ProductService {
         }
 
         // ✅ VALIDACIÓN: Solo se pueden editar productos en estado PENDING
-        if (!"PENDING".equals(product.getStatus())) {
+        if (!ProductStatus.PENDING.equals(product.getStatus())) {
             throw new IllegalArgumentException("No se pueden editar productos que ya han sido aprobados o rechazados");
         }
 
@@ -173,7 +189,23 @@ public class ProductService {
         product.setOriginalPrice(request.getOriginalPrice());
         product.setCategory(request.getCategory());
         product.setStock(request.getStock());
-        product.setImageUrl(request.getImageUrl());
+        
+        // Procesar nueva imagen si viene
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+            try {
+                // Eliminar imagen anterior si existe
+                if (product.getImageUrl() != null) {
+                    fileUploadService.deleteImage(product.getImageUrl());
+                }
+                // Subir nueva imagen
+                String newImageUrl = fileUploadService.uploadImage(request.getImageFile());
+                product.setImageUrl(newImageUrl);
+            } catch (IOException e) {
+                log.error("Error al actualizar imagen", e);
+                throw new RuntimeException("Error al actualizar imagen: " + e.getMessage());
+            }
+        }
+        
         if (request.getActive() != null) {
             product.setActive(request.getActive());
         }
@@ -191,9 +223,9 @@ public class ProductService {
             throw new RuntimeException("No tienes permiso para eliminar este producto");
         }
 
-        // ✅ SOFT DELETE: Marcar como inactivo y cambiar estado
+        // ✅ SOFT DELETE: Marcar como inactivo y cambiar estado a REJECTED
         product.setActive(false);
-        product.setStatus("DELETED");
+        product.setStatus(ProductStatus.REJECTED);  // REJECTED representa eliminado/rechazado
         productRepository.save(product);
     }
 
@@ -232,15 +264,15 @@ public class ProductService {
             throw new RuntimeException("No tienes permiso para cancelar este producto");
         }
 
-        String currentStatus = product.getStatus();
-        if (!("PENDING".equals(currentStatus) || "APPROVED".equals(currentStatus))) {
+        ProductStatus currentStatus = product.getStatus();
+        if (!(ProductStatus.PENDING.equals(currentStatus) || ProductStatus.APPROVED.equals(currentStatus))) {
             throw new IllegalArgumentException(
                 "No se puede cancelar un producto en estado " + currentStatus + 
                 ". Solo se pueden cancelar productos PENDING o APPROVED"
             );
         }
 
-        product.setStatus("CANCELLED");
+        product.setStatus(ProductStatus.REJECTED);  // REJECTED representa cancelado/rechazado
         product.setActive(false);
         product.setUpdatedAt(java.time.LocalDateTime.now());
         Product savedProduct = productRepository.save(product);
@@ -261,7 +293,7 @@ public class ProductService {
                 .reviews(product.getReviews())
                 .vendorId(product.getVendor().getId())
                 .active(product.getActive())
-                .status(product.getStatus())  // Add status mapping
+                .status(product.getStatus() != null ? product.getStatus().name() : null)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();

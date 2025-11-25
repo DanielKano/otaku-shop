@@ -3,6 +3,7 @@ package com.otakushop.controller;
 import com.otakushop.dto.ProductDTO;
 import com.otakushop.dto.ProductRequest;
 import com.otakushop.service.ProductService;
+import com.otakushop.service.FileUploadService;
 import com.otakushop.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 @Slf4j
 public class ProductController {
     private final ProductService productService;
+    private final FileUploadService fileUploadService;
     private final SecurityUtil securityUtil;
 
     // ===== ENDPOINTS DE APROBACIÓN (ADMIN) - DEBEN VENIR PRIMERO =====
@@ -137,20 +140,69 @@ public class ProductController {
     @PostMapping
     @PreAuthorize("hasRole('VENDEDOR')")
     public ResponseEntity<ProductDTO> createProduct(
-            @Valid @RequestBody ProductRequest request) {
+            @RequestParam String name,
+            @RequestParam String description,
+            @RequestParam BigDecimal price,
+            @RequestParam(required = false) BigDecimal originalPrice,
+            @RequestParam String category,
+            @RequestParam Integer stock,
+            @RequestParam(required = false) MultipartFile imageFile) {
+        
         Long vendorId = securityUtil.getCurrentUserId();
-        ProductDTO product = productService.createProduct(request, vendorId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(product);
+        
+        try {
+            // Crear request sin archivo
+            ProductRequest request = ProductRequest.builder()
+                    .name(name)
+                    .description(description)
+                    .price(price)
+                    .originalPrice(originalPrice)
+                    .category(category)
+                    .stock(stock)
+                    .imageFile(imageFile)
+                    .active(true)
+                    .build();
+            
+            ProductDTO product = productService.createProduct(request, vendorId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(product);
+        } catch (Exception e) {
+            log.error("Error al crear producto", e);
+            throw new RuntimeException("Error al crear producto: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('VENDEDOR')")
     public ResponseEntity<ProductDTO> updateProduct(
             @PathVariable Long id,
-            @Valid @RequestBody ProductRequest request) {
+            @RequestParam String name,
+            @RequestParam String description,
+            @RequestParam BigDecimal price,
+            @RequestParam(required = false) BigDecimal originalPrice,
+            @RequestParam String category,
+            @RequestParam Integer stock,
+            @RequestParam(required = false) MultipartFile imageFile) {
+        
         Long vendorId = securityUtil.getCurrentUserId();
-        ProductDTO product = productService.updateProduct(id, request, vendorId);
-        return ResponseEntity.ok(product);
+        
+        try {
+            ProductRequest request = ProductRequest.builder()
+                    .name(name)
+                    .description(description)
+                    .price(price)
+                    .originalPrice(originalPrice)
+                    .category(category)
+                    .stock(stock)
+                    .imageFile(imageFile)
+                    .active(true)
+                    .build();
+            
+            ProductDTO product = productService.updateProduct(id, request, vendorId);
+            return ResponseEntity.ok(product);
+        } catch (Exception e) {
+            log.error("Error al actualizar producto", e);
+            throw new RuntimeException("Error al actualizar producto: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")

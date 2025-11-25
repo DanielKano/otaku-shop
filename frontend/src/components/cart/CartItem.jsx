@@ -1,8 +1,17 @@
+import { useMemo } from 'react'
 import Button from '../ui/Button'
+import useCartValidations from '../../hooks/useCartValidations'
+import stockReservationService from '../../services/stockReservationService'
 
 const CartItem = ({ item, onQuantityChange, onRemove }) => {
+  const { getReservationTimeRemaining, getStockInfo } = useCartValidations()
   const maxStock = item.stock || 0
-  const isAtMaxStock = item.quantity >= maxStock
+  const timeRemaining = useMemo(() => getReservationTimeRemaining(item.id), [item.id, getReservationTimeRemaining])
+  const stockInfo = useMemo(() => getStockInfo(item.id), [item.id, getStockInfo])
+  
+  // ✅ Cálculo correcto: disponible es lo que queda después de reservas
+  const availableStock = stockInfo ? stockInfo.available : maxStock
+  const isAtMaxStock = item.quantity >= availableStock || item.quantity >= 10
   const exceedsStock = item.quantity > maxStock
 
   return (
@@ -29,23 +38,43 @@ const CartItem = ({ item, onQuantityChange, onRemove }) => {
         </p>
         
         {/* Stock indicators */}
-        <div className="mt-1 space-y-1">
+        <div className="mt-2 space-y-1">
+          {/* Información de reserva */}
+          {timeRemaining && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
+              <span>🔒</span>
+              <span>Reservado por {timeRemaining.days}d {timeRemaining.hours}h</span>
+            </p>
+          )}
+          
+          {/* Stock disponible */}
+          {stockInfo && (
+            <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+              <span>📦</span>
+              <span>Stock disponible: {stockInfo.available}/{stockInfo.totalStock} unidades</span>
+            </p>
+          )}
+          
+          {/* Advertencias */}
           {exceedsStock && (
             <p className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
               <span>❌</span>
               <span>Excede stock disponible (máx: {maxStock})</span>
             </p>
           )}
-          {isAtMaxStock && !exceedsStock && (
+          
+          {isAtMaxStock && !exceedsStock && item.quantity >= 10 && (
             <p className="text-xs text-orange-600 dark:text-orange-400 font-medium flex items-center gap-1">
               <span>⚠️</span>
-              <span>Stock máximo alcanzado ({maxStock} unidades)</span>
+              <span>Límite de 10 unidades alcanzado</span>
             </p>
           )}
-          {!isAtMaxStock && maxStock > 0 && maxStock <= 5 && (
-            <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-              <span>🔔</span>
-              <span>Quedan {maxStock - item.quantity} unidades disponibles</span>
+          
+          {/* Advertencia de stock bajo */}
+          {timeRemaining && timeRemaining.days === 0 && timeRemaining.hours < 6 && (
+            <p className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
+              <span>⏰</span>
+              <span>¡Reserva vence en menos de 6 horas!</span>
             </p>
           )}
         </div>
@@ -72,7 +101,7 @@ const CartItem = ({ item, onQuantityChange, onRemove }) => {
               : 'bg-gray-200 dark:bg-gray-700 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600'
           }`}
           disabled={isAtMaxStock}
-          title={isAtMaxStock ? `Stock máximo alcanzado: ${maxStock}` : 'Aumentar cantidad'}
+          title={item.quantity >= 10 ? 'Límite de 10 unidades' : !availableStock ? 'Sin stock disponible' : 'Aumentar cantidad'}
           aria-label="Aumentar cantidad"
         >
           +

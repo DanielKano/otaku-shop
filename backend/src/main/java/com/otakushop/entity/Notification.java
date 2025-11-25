@@ -1,10 +1,7 @@
 package com.otakushop.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -16,7 +13,10 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Notification {
+@Builder
+@EqualsAndHashCode(callSuper = true)  // ✅ Para heredancia
+@ToString(callSuper = true)
+public class Notification extends AuditableEntity {  // ✅ Heredar para auditoría
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,17 +37,24 @@ public class Notification {
     private NotificationType type;
     
     @Column(nullable = false)
+    @Builder.Default
     private boolean isRead = false;
-    
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
     
     private LocalDateTime readAt;
     
     // Metadata adicional (JSON string)
     @Column(columnDefinition = "TEXT")
     private String metadata;
+    
+    @PrePersist
+    protected void onCreate() {
+        super.onCreate();  // ✅ Llamar a padre para auditoría
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        super.onUpdate();  // ✅ Llamar a padre para auditoría
+    }
     
     public enum NotificationType {
         ORDER_CREATED,

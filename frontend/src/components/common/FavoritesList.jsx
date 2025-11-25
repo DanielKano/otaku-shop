@@ -25,7 +25,7 @@ const FavoritesList = ({ favorites = [], onRemove, onAddToCart }) => {
           <div className="bg-gray-200 dark:bg-gray-700 aspect-square flex items-center justify-center overflow-hidden">
             {product.imageUrl ? (
               <img
-                src={product.imageUrl}
+                src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
                 alt={product.name}
                 className="w-full h-full object-contain p-4 hover:scale-105 transition-transform"
               />

@@ -2,7 +2,6 @@ package com.otakushop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -10,53 +9,39 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+@EqualsAndHashCode(callSuper = true)  // ✅ Para heredancia de AuditableEntity
+@ToString(callSuper = true)
+public class User extends AuditableEntity {  // ✅ Heredar para auditoría
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String email;
+    @Column(name = "email", nullable = false, length = 255, unique = true)
+    private String email;  // ✅ NOT NULL + UNIQUE
 
-    @Column
+    @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(name = "name", nullable = false, length = 255)
+    private String name;  // ✅ NOT NULL
 
-    @Column
-    private String phone;
+    @Column(nullable = false, length = 20)
+    private String phone;  // ✅ NOT NULL
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)  // ✅ STRING no ORDINAL
+    @Column(name = "provider", nullable = false, length = 50)
     @Builder.Default
     private AuthProvider provider = AuthProvider.LOCAL;
 
-    @Column(name = "provider_id")
+    @Column(name = "provider_id", length = 255)
     private String providerId;
 
-    @Convert(converter = RoleConverter.class)
-    @Column(nullable = false)
-    private Role role;
+    @Enumerated(EnumType.STRING)  // ✅ STRING no ORDINAL
+    @Column(name = "role", nullable = false, length = 50)
+    private Role role;  // ✅ NOT NULL
 
-    @Column(nullable = false)
+    @Column(name = "enabled", nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
     @Builder.Default
-    private Boolean enabled = true;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    private Boolean enabled = true;  // ✅ NOT NULL
 }
+

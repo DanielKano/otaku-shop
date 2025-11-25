@@ -17,8 +17,26 @@ export const authService = {
 export const productService = {
   getAll: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
-  create: (data) => api.post('/products', data),
-  update: (id, data) => api.put(`/products/${id}`, data),
+  create: (data) => {
+    // Si es FormData (contiene archivo), no setear Content-Type
+    if (data instanceof FormData) {
+      return api.post('/products', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    // Si es JSON normal
+    return api.post('/products', data)
+  },
+  update: (id, data) => {
+    // Si es FormData (contiene archivo), no setear Content-Type
+    if (data instanceof FormData) {
+      return api.put(`/products/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    // Si es JSON normal
+    return api.put(`/products/${id}`, data)
+  },
   delete: (id) => api.delete(`/products/${id}`),
   getPending: (params) => api.get('/products/pending', { params }),
   getApproved: (params) => api.get('/products/approved', { params }),

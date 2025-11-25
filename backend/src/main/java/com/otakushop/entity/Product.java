@@ -3,92 +3,93 @@ package com.otakushop.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products", indexes = {
     @Index(name = "idx_product_category", columnList = "category"),
     @Index(name = "idx_product_status", columnList = "status"),
     @Index(name = "idx_product_vendor", columnList = "vendor_id"),
-    @Index(name = "idx_product_active_status", columnList = "active, status")
+    @Index(name = "idx_product_active_status", columnList = "active, status"),
+    @Index(name = "idx_product_created_at", columnList = "created_at")
 })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Product {
+@EqualsAndHashCode(callSuper = true)  // ✅ Para heredancia
+@ToString(callSuper = true)
+public class Product extends AuditableEntity {  // ✅ Heredar para auditoría
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;
+    // ✅ Agregar @Version para optimistic locking
+    @Version
+    @Column(name = "version")
+    private Long version;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "name", nullable = false, length = 255)
+    private String name;  // ✅ NOT NULL
+
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
+    @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;  // ✅ NOT NULL
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "original_price", precision = 10, scale = 2)
     private BigDecimal originalPrice;
 
-    @Column(nullable = false)
-    private String category;
+    @Column(name = "category", nullable = false, length = 255)
+    private String category;  // ✅ NOT NULL
 
-    @Column(nullable = false)
+    @Column(name = "stock", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
     @Builder.Default
-    private Integer stock = 0;
+    private Integer stock = 0;  // ✅ NOT NULL
 
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    @Column(name = "rating", nullable = true)
+    @Column(name = "rating", nullable = false, columnDefinition = "DOUBLE PRECISION DEFAULT 0.0")
     @Builder.Default
-    private Double rating = 0.0;
+    private Double rating = 0.0;  // ✅ NOT NULL
 
-    @Column(name = "reviews", nullable = true)
+    @Column(name = "reviews", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
     @Builder.Default
-    private Integer reviews = 0;
+    private Integer reviews = 0;  // ✅ NOT NULL
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendor_id", nullable = false)
-    private User vendor;
+    private User vendor;  // ✅ NOT NULL
 
-    @Column(nullable = false)
+    @Column(name = "active", nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
     @Builder.Default
-    private Boolean active = true;
+    private Boolean active = true;  // ✅ NOT NULL
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)  // ✅ STRING no ORDINAL
+    @Column(name = "status", nullable = false, length = 50)
     @Builder.Default
-    private String status = "PENDING";  // PENDING, APPROVED, REJECTED
+    private ProductStatus status = ProductStatus.PENDING;  // ✅ NOT NULL
 
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
 
     @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
+    private java.time.LocalDateTime approvedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by_id")
     private User approvedBy;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        super.onCreate();  // ✅ Llamar a padre para auditoría
         if (rating == null) rating = 0.0;
         if (reviews == null) reviews = 0;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        super.onUpdate();  // ✅ Llamar a padre para auditoría
     }
 }

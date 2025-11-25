@@ -134,7 +134,7 @@ const ProductDetail = ({ product, onBack }) => {
           <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center text-6xl overflow-hidden">
             {product.imageUrl ? (
               <img
-                src={product.imageUrl}
+                src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
                 alt={product.name}
                 className="w-full h-full object-contain p-4"
               />
@@ -150,62 +150,88 @@ const ProductDetail = ({ product, onBack }) => {
             {product.name}
           </h1>
 
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
-            Categoría: <span className="font-semibold">{product.category}</span>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
+            🏷️ <span className="font-semibold capitalize">{product.category || 'Sin categoría'}</span>
           </p>
 
-          {/* Rating */}
-          {product.rating && (
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex">
+          {/* Rating and Reviews */}
+          {product.rating && product.rating > 0 ? (
+            <div className="flex items-center gap-3 mb-6 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <span
                     key={i}
                     className={
                       i < Math.round(product.rating)
-                        ? 'text-yellow-500'
-                        : 'text-gray-300'
+                        ? 'text-2xl text-yellow-500'
+                        : 'text-2xl text-gray-300'
                     }
                   >
                     ★
                   </span>
                 ))}
               </div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {product.rating} ({product.reviews || 0} reseñas)
-              </span>
+              <div className="ml-2">
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {product.rating.toFixed(1)} / 5
+                </p>
+                {product.reviews && product.reviews > 0 && (
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {product.reviews} {product.reviews === 1 ? 'reseña' : 'reseñas'}
+                  </p>
+                )}
+              </div>
             </div>
-          )}
+          ) : null}
 
-          {/* Price */}
-          <div className="mb-6">
-            <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-              ${product.price?.toFixed(2) || '0.00'}
-            </p>
-            {product.originalPrice && (
-              <p className="text-gray-400 line-through">
-                ${product.originalPrice?.toFixed(2)}
+          {/* Price Section */}
+          <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Precio</p>
+            <div className="flex items-baseline gap-3">
+              <p className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                ${product.price ? parseFloat(product.price).toFixed(2) : 'Consultar'}
               </p>
-            )}
+              {product.originalPrice && product.originalPrice > product.price && (
+                <p className="text-lg text-gray-400 line-through">
+                  ${parseFloat(product.originalPrice).toFixed(2)}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Stock */}
-          <div className="mb-6">
+          <div className="mb-8 p-4 rounded-lg border-2" style={{
+            borderColor: isOutOfStock ? '#ef4444' : '#22c55e',
+            backgroundColor: isOutOfStock ? 'rgba(239, 68, 68, 0.05)' : 'rgba(34, 197, 94, 0.05)'
+          }}>
             {isOutOfStock ? (
-              <p className="text-red-600 dark:text-red-400 font-semibold">
-                Producto agotado
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">❌</span>
+                <p className="text-lg font-semibold text-red-600 dark:text-red-400">
+                  Producto agotado
+                </p>
+              </div>
             ) : (
-              <p className="text-green-600 dark:text-green-400">
-                En stock: {product.stock} unidades
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✅</span>
+                <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  {product.stock} {product.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}
+                </p>
+              </div>
             )}
           </div>
 
           {/* Description */}
-          <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-            {product.description}
-          </p>
+          {product.description && (
+            <div className="mb-8">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
+                Descripción
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-base">
+                {product.description}
+              </p>
+            </div>
+          )}
 
           {/* Quantity Selector */}
           {!isOutOfStock && (
@@ -259,30 +285,20 @@ const ProductDetail = ({ product, onBack }) => {
         </div>
       </div>
 
-      {/* Reviews Section */}
+      {/* Reviews Section - Solo si hay reseñas reales */}
       {product.reviews && product.reviews > 0 && (
         <div className="mt-12 border-t border-gray-200 dark:border-gray-700 pt-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Reseñas ({product.reviews})
-          </h2>
-          <div className="space-y-4">
-            {[...Array(Math.min(3, product.reviews))].map((_, i) => (
-              <div
-                key={i}
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    Usuario {i + 1}
-                  </span>
-                  <span className="text-yellow-500">{'★'.repeat(4)}</span>
-                </div>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Excelente producto, muy recomendado...
-                </p>
-              </div>
-            ))}
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              📝 Reseñas
+            </h2>
+            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-semibold">
+              {product.reviews}
+            </span>
           </div>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Las reseñas de clientes se mostrarán aquí próximamente.
+          </p>
         </div>
       )}
     </NeonCard>

@@ -9,28 +9,17 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * Validador para la anotación @ValidStrictEmail
- * Implementa validación estricta de emails con whitelist de dominios
- */
 public class StrictEmailValidator implements ConstraintValidator<ValidStrictEmail, String> {
 
-    // Regex estricto para email (RFC 5322 simplificado)
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
-        "^[a-zA-Z0-9][a-zA-Z0-9._+-]{1,62}[a-zA-Z0-9]@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+        "^(?=.{6,50}$)(?!.*\\.\\.)(?=[a-z0-9._%+-]{3,}@)[a-z0-9._%+-]{3,30}@(gmail|hotmail|outlook|yahoo|otaku|otakushop)\\.(com|co)$"
     );
-
-    // Detectar caracteres especiales consecutivos
-    private static final Pattern CONSECUTIVE_DOTS = Pattern.compile("\\.\\.");
-    private static final Pattern CONSECUTIVE_SPECIAL = Pattern.compile("[._+-]{2,}");
-
-    private boolean checkDomain;
-    private Set<String> allowedDomains;
+    
+    private static final Pattern REPEATED_CHARS_3_TIMES = Pattern.compile("(.)\\1{2}");
 
     @Override
     public void initialize(ValidStrictEmail constraintAnnotation) {
-        this.checkDomain = constraintAnnotation.checkDomain();
-        this.allowedDomains = new HashSet<>(Arrays.asList(constraintAnnotation.allowedDomains()));
+        // Initialization if needed
     }
 
     @Override
@@ -42,52 +31,14 @@ public class StrictEmailValidator implements ConstraintValidator<ValidStrictEmai
 
         String trimmedEmail = value.trim().toLowerCase();
 
-        // Nivel 1: Formato básico
         if (!EMAIL_PATTERN.matcher(trimmedEmail).matches()) {
-            addConstraintViolation(context, "El formato del correo electrónico no es válido");
+            addConstraintViolation(context, "El formato del correo electrónico no es válido o no cumple con las políticas del sitio");
             return false;
         }
 
-        // Verificar longitud de parte local (antes de @)
-        String[] parts = trimmedEmail.split("@");
-        if (parts.length != 2) {
-            addConstraintViolation(context, "El correo debe tener exactamente una @");
+        if (REPEATED_CHARS_3_TIMES.matcher(trimmedEmail.split("@")[0]).find()) {
+            addConstraintViolation(context, "El nombre de usuario del correo no debe tener 3 caracteres iguales seguidos");
             return false;
-        }
-
-        String localPart = parts[0];
-        String domain = parts[1];
-
-        if (localPart.length() < 3) {
-            addConstraintViolation(context, "La parte local del correo es muy corta (mínimo 3 caracteres)");
-            return false;
-        }
-
-        if (localPart.length() > 64) {
-            addConstraintViolation(context, "La parte local del correo es muy larga (máximo 64 caracteres)");
-            return false;
-        }
-
-        // Verificar puntos consecutivos
-        if (CONSECUTIVE_DOTS.matcher(localPart).find()) {
-            addConstraintViolation(context, "El correo no puede tener puntos consecutivos");
-            return false;
-        }
-
-        // Verificar caracteres especiales consecutivos
-        if (CONSECUTIVE_SPECIAL.matcher(localPart).find()) {
-            addConstraintViolation(context, "El correo no puede tener caracteres especiales consecutivos");
-            return false;
-        }
-
-        // Nivel 2: Verificar dominio permitido
-        if (checkDomain) {
-            if (!allowedDomains.contains(domain)) {
-                String allowedList = String.join(", ", allowedDomains);
-                addConstraintViolation(context, 
-                    "El dominio '" + domain + "' no está permitido. Dominios válidos: " + allowedList);
-                return false;
-            }
         }
 
         return true;

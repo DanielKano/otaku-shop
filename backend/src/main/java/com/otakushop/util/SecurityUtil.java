@@ -2,6 +2,7 @@ package com.otakushop.util;
 
 import com.otakushop.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityUtil {
     private final JwtTokenProvider jwtTokenProvider;
     private final HttpServletRequest httpServletRequest;
@@ -21,15 +23,23 @@ public class SecurityUtil {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
         if (authentication == null || !authentication.isAuthenticated()) {
+            log.error("Authentication is null or not authenticated");
             throw new SecurityException("Usuario no autenticado");
         }
         
         // Obtener el JWT del header
         String jwt = getJwtFromRequest();
         if (StringUtils.hasText(jwt)) {
-            return jwtTokenProvider.getUserIdFromJWT(jwt);
+            Long userId = jwtTokenProvider.getUserIdFromJWT(jwt);
+            if (userId == null) {
+                log.error("getUserIdFromJWT returned null for JWT");
+                throw new SecurityException("No se pudo extraer el ID del usuario del JWT");
+            }
+            log.debug("Successfully extracted userId={} from JWT", userId);
+            return userId;
         }
         
+        log.error("JWT not found in Authorization header");
         throw new SecurityException("No se pudo obtener el ID del usuario");
     }
     

@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/notifications")
 @RequiredArgsConstructor
 @Tag(name = "Notificaciones", description = "Gestión de notificaciones de usuario")
 @SecurityRequirement(name = "Bearer Authentication")

@@ -15,7 +15,7 @@ import java.util.Map;
  * Controlador REST para gestión de checkout
  */
 @RestController
-@RequestMapping("/api/checkout")
+@RequestMapping("/checkout")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class CheckoutController {

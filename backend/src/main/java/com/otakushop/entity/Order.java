@@ -18,70 +18,75 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Order {
+@EqualsAndHashCode(callSuper = true)  // ✅ Para heredancia
+@ToString(callSuper = true)
+public class Order extends AuditableEntity {  // ✅ Heredar para auditoría
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User user;  // ✅ NOT NULL
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private OrderStatus status;
+    @Enumerated(EnumType.STRING)  // ✅ STRING no ORDINAL
+    @Column(name = "status", nullable = false, length = 50)
+    @Builder.Default
+    private OrderStatus status = OrderStatus.PENDING;  // ✅ NOT NULL
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal subtotal;
+    @Column(name = "subtotal", nullable = false, precision = 10, scale = 2,
+            columnDefinition = "DECIMAL(10,2) DEFAULT 0")
+    @Builder.Default
+    private BigDecimal subtotal = BigDecimal.ZERO;  // ✅ NOT NULL
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal shipping;
+    @Column(name = "shipping", nullable = false, precision = 10, scale = 2,
+            columnDefinition = "DECIMAL(10,2) DEFAULT 0")
+    @Builder.Default
+    private BigDecimal shipping = BigDecimal.ZERO;  // ✅ NOT NULL
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal discount;
+    @Column(name = "discount", nullable = false, precision = 10, scale = 2,
+            columnDefinition = "DECIMAL(10,2) DEFAULT 0")
+    @Builder.Default
+    private BigDecimal discount = BigDecimal.ZERO;  // ✅ NOT NULL
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal tax;
+    @Column(name = "tax", nullable = false, precision = 10, scale = 2,
+            columnDefinition = "DECIMAL(10,2) DEFAULT 0")
+    @Builder.Default
+    private BigDecimal tax = BigDecimal.ZERO;  // ✅ NOT NULL
 
     @Column(name = "total", nullable = false, precision = 10, scale = 2)
-    private BigDecimal total;
+    private BigDecimal total;  // ✅ NOT NULL
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalPrice;
+    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalPrice;  // ✅ NOT NULL
 
     @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;
 
-    @Column(name = "shipping_city")
+    @Column(name = "shipping_city", length = 100)
     private String shippingCity;
 
-    @Column(name = "shipping_postal_code")
+    @Column(name = "shipping_postal_code", length = 20)
     private String shippingPostalCode;
 
-    @Column(name = "shipping_country")
+    @Column(name = "shipping_country", length = 100)
     private String shippingCountry;
 
-    @Column(name = "phone_number")
+    @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
-    @Column(name = "payment_method")
+    @Column(name = "payment_method", length = 50)
     private String paymentMethod;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "tracking_number")
+    @Column(name = "tracking_number", length = 100)
     private String trackingNumber;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     @Column(name = "shipped_at")
     private LocalDateTime shippedAt;
@@ -94,15 +99,19 @@ public class Order {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        super.onCreate();  // ✅ Llamar a padre para auditoría
         if (status == null) {
             status = OrderStatus.PENDING;
         }
+        if (subtotal == null) subtotal = BigDecimal.ZERO;
+        if (shipping == null) shipping = BigDecimal.ZERO;
+        if (discount == null) discount = BigDecimal.ZERO;
+        if (tax == null) tax = BigDecimal.ZERO;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        super.onUpdate();  // ✅ Llamar a padre para auditoría
     }
 }
+

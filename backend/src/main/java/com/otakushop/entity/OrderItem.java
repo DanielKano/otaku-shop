@@ -3,7 +3,6 @@ package com.otakushop.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "order_items")
@@ -11,7 +10,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderItem {
+@EqualsAndHashCode(callSuper = true)  // ✅ Para heredancia
+@ToString(callSuper = true)
+public class OrderItem extends AuditableEntity {  // ✅ Heredar para auditoría
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -39,11 +40,13 @@ public class OrderItem {
     @Column(name = "product_image_url")
     private String productImageUrl;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        super.onCreate();  // ✅ Llamar a padre para auditoría
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        super.onUpdate();  // ✅ Llamar a padre para auditoría
     }
 }

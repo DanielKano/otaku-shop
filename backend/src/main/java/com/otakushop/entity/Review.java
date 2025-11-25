@@ -1,13 +1,7 @@
 package com.otakushop.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
+import lombok.*;
 
 @Entity
 @Table(name = "reviews", indexes = {
@@ -17,7 +11,10 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Review {
+@Builder
+@EqualsAndHashCode(callSuper = true)  // ✅ Para heredancia
+@ToString(callSuper = true)
+public class Review extends AuditableEntity {  // ✅ Heredar para auditoría
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,18 +35,23 @@ public class Review {
     private String comment;
     
     @Column(nullable = false)
+    @Builder.Default
     private boolean verified = false; // Solo usuarios que compraron el producto
-    
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
     
     // Respuesta del vendedor
     @Column(columnDefinition = "TEXT")
     private String vendorResponse;
     
-    private LocalDateTime vendorResponseDate;
+    private java.time.LocalDateTime vendorResponseDate;
+
+    @PrePersist
+    protected void onCreate() {
+        super.onCreate();  // ✅ Llamar a padre para auditoría
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        super.onUpdate();  // ✅ Llamar a padre para auditoría
+    }
 }
+

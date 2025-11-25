@@ -101,9 +101,9 @@ const PendingProductsModal = ({ isOpen, onClose }) => {
                         </span>
                       </div>
                     </div>
-                    {product.image && (
+                    {product.imageUrl && (
                       <img
-                        src={product.image}
+                        src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
                         alt={product.name}
                         className="w-24 h-24 object-cover rounded ml-4"
                       />

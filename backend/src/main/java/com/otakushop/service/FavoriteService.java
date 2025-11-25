@@ -53,7 +53,10 @@ public class FavoriteService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        Favorite favorite = new Favorite(user, product);
+        Favorite favorite = Favorite.builder()
+                .user(user)
+                .product(product)
+                .build();
         favoriteRepository.save(favorite);
     }
 
@@ -93,7 +96,7 @@ public class FavoriteService {
         dto.setStock(product.getStock());
         dto.setCategory(product.getCategory());
         dto.setImageUrl(product.getImageUrl());
-        dto.setStatus(product.getStatus());
+        dto.setStatus(product.getStatus() != null ? product.getStatus().name() : null);
         
         if (product.getVendor() != null) {
             dto.setVendorId(product.getVendor().getId());

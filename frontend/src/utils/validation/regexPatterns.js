@@ -1,3 +1,4 @@
+
 /**
  * 📚 BIBLIOTECA DE EXPRESIONES REGULARES DOCUMENTADAS
  * Patrones optimizados con explicación detallada
@@ -5,51 +6,31 @@
 
 /**
  * FULL NAME VALIDATION
- * 
- * Explicación detallada:
- * ^                          - Inicio de string
- * (?!.*\s{2,})              - Negative lookahead: no permite 2+ espacios consecutivos
- * (?!.*['-]{2,})            - Negative lookahead: no permite 2+ guiones/apóstrofes consecutivos
- * (?!^\s)                   - Negative lookahead: no comienza con espacio
- * (?!.*\s$)                 - Negative lookahead: no termina con espacio
- * [A-Za-zÁ-ÿ\u00f1\u00d1]+ - Primera palabra: letras con tildes y ñ
- * (?:                       - Grupo no capturador para palabras adicionales
- *   \s[A-Za-zÁ-ÿ\u00f1\u00d1'-]+ - Espacio + palabra con guiones/apóstrofes permitidos
- * )+                        - Una o más palabras adicionales (mínimo 2 palabras total)
- * $                         - Fin de string
+ * RegEx recomendado (cliente):
+ * ^(?!.*([A-Za-zÁÉÍÓÚáéíóúñÑ])\1{3})(?!.*\b([A-Za-zÁÉÍÓÚáéíóúñÑ]+)\b\s+\2\b)(?!.*(asdf|qwer|zxcv|qwerty|abc|abcd|1234))(?=.{3,60}$)(?=.*[aeiouAEIOUáéíóú])(?=.*[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZñÑ])[A-Za-zÁÉÍÓÚáéíóúñÑ ]+$
  */
-export const FULL_NAME_REGEX = /^(?!.*\s{2,})(?!.*['-]{2,})(?!^\s)(?!.*\s$)[A-Za-zÁ-ÿ\u00f1\u00d1]+(?:\s[A-Za-zÁ-ÿ\u00f1\u00d1'-]+)+$/;
+export const FULL_NAME_REGEX = /^(?!.*([A-Za-zÁÉÍÓÚáéíóúñÑ])\1{3})(?!.*\b([A-Za-zÁÉÍÓÚáéíóúñÑ]+)\b\s+\2\b)(?!.*(asdf|qwer|zxcv|qwerty|abc|abcd|1234))(?=.{3,60}$)(?=.*[aeiouAEIOUáéíóú])(?=.*[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZñÑ])[A-Za-zÁÉÍÓÚáéíóúñÑ ]+$/;
 
 /**
  * EMAIL VALIDATION (Estricta)
- * 
- * Explicación:
- * ^[a-zA-Z0-9]              - Comienza con letra o número
- * [a-zA-Z0-9._-]{2,63}      - 3-64 caracteres total (local part)
- * @                         - Símbolo arroba
- * (gmail|hotmail|outlook|yahoo|otaku|otakushop) - Dominios permitidos
- * \.(com|co|org|net|edu)    - Sufijos permitidos
- * $                         - Fin de string
+ * RegEx recomendado:
+ * ^(?=.{6,50}$)(?=.{3,}@[A-Za-z0-9.-]+\.(com|co)$)(?!.*\.\.)[A-Za-z0-9._%+-]{3,}@(gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|otaku\.com|otakushop\.com)$
  */
-export const STRICT_EMAIL_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9._-]{2,63}@(gmail|hotmail|outlook|yahoo|otaku|otakushop)\.(com|co|org|net|edu)$/;
+export const STRICT_EMAIL_REGEX = /^(?=.{6,50}$)(?=.{3,}@[A-Za-z0-9.-]+\.(com|co)$)(?!.*\.\.)[A-Za-z0-9._%+-]{3,}@(gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|otaku\.com|otakushop\.com)$/;
 
 /**
  * COLOMBIAN MOBILE PHONE VALIDATION
- * 
- * Explicación:
- * ^                         - Inicio de string
- * (                         - Grupo para prefijos válidos
- *   30[0-5]                 - 300-305 (Claro)
- *   |31[0-9]                - 310-319 (Claro, Movistar, Tigo)
- *   |32[0-5]                - 320-325 (Claro, Movistar)
- *   |33[0-3]                - 330-333 (Claro, WOM)
- *   |34[0-3]                - 340-343 (Móvil Éxito, Flash)
- *   |35[0-3]                - 350-353 (Tigo, Avantel)
- * )
- * \d{7}                     - 7 dígitos adicionales
- * $                         - Fin de string
+ * RegEx recomendado (cliente):
+ * ^(300|301|302|303|304|305|310|311|312|313|314|315|316|317|318|319|320|321|322|323)\d{7}$
  */
-export const COLOMBIAN_PHONE_REGEX = /^(30[0-5]|31[0-9]|32[0-5]|33[0-3]|34[0-3]|35[0-3])\d{7}$/;
+export const COLOMBIAN_PHONE_REGEX = /^(300|301|302|303|304|305|310|311|312|313|314|315|316|317|318|319|320|321|322|323)\d{7}$/;
+
+/**
+ * PASSWORD COMPONENT VALIDATIONS
+ * RegEx recomendado:
+ * ^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*])(?!.*\s).{8,}$
+ */
+export const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*])(?!.*\s).{8,}$/;
 
 /**
  * PASSWORD COMPONENT VALIDATIONS
@@ -73,19 +54,19 @@ export const PASSWORD_PATTERNS = {
   
   /**
    * Al menos 1 símbolo especial
-   * Permitidos: !@#$%^&*()_+-=[]{}|;:,.<>?
+   * Permitidos: !@#$%^&*
    */
-  SPECIAL: /[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/,
+  SPECIAL: /[!@#$%^&*?.]/,
   
   /**
-   * Longitud: 8-32 caracteres
+   * Longitud: 8+ caracteres
    */
-  LENGTH: /^.{8,32}$/,
-  
+  LENGTH: /^.{8,}$/,
+
   /**
-   * Solo caracteres permitidos
+   * No espacios
    */
-  ALLOWED_CHARS: /^[A-Za-z\d!@#$%^&*()_+\-=[\]{}|;:,.<>?]+$/
+  NO_SPACES: /^\S*$/,
 };
 
 /**
@@ -108,7 +89,7 @@ export const SPAM_PATTERNS = {
   /**
    * Tecleo aleatorio común: asdf, qwerty, zxcv, etc.
    */
-  KEYBOARD_MASHING: /asdf|qwerty|zxcv|hjkl|aoeu|jkl|dfgh/i,
+  KEYBOARD_MASHING: /asdf|qwer|zxcv|qwerty|abc|abcd|1234/i,
   
   /**
    * Secuencias numéricas: 123, 456, 789
@@ -121,23 +102,19 @@ export const SPAM_PATTERNS = {
   LETTER_SEQUENCE: /(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i,
   
   /**
-   * Caracteres repetidos 3+ veces: aaa, bbb, xxx
+   * Caracteres repetidos 4+ veces: aaaa, bbbb, xxxx
    */
-  REPEATED_CHARS: /(.)\1{2,}/,
-  
+  REPEATED_CHARS: /([A-Za-zÁÉÍÓÚáéíóúñÑ])\1{3}/,
+
   /**
-   * Patrón de alternancia simple: aba, aca, dad
+   * No más de 3 vocales seguidas
    */
-  ALTERNATING_PATTERN: /^(.)(.)(\1\2)+$/,
-  
+  MANY_VOWELS: /[aeiouAEIOUáéíóú]{4,}/,
+
   /**
-   * Solo mayúsculas sostenidas (50%+ del texto)
+   * No más de 3 consonantes seguidas
    */
-  EXCESSIVE_CAPS: (text) => {
-    const upperCount = (text.match(/[A-Z]/g) || []).length;
-    const letterCount = (text.match(/[A-Za-z]/g) || []).length;
-    return letterCount > 0 && (upperCount / letterCount) > 0.5;
-  }
+  MANY_CONSONANTS: /[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZñÑ]{4,}/,
 };
 
 /**
@@ -162,6 +139,7 @@ export default {
   FULL_NAME_REGEX,
   STRICT_EMAIL_REGEX,
   COLOMBIAN_PHONE_REGEX,
+  PASSWORD_REGEX,
   PASSWORD_PATTERNS,
   PRODUCT_NAME_REGEX,
   SPAM_PATTERNS,

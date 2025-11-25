@@ -6,6 +6,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import stockReservationService from '../services/stockReservationService';
 
+const MAX_UNITS_PER_PRODUCT = 10;
+
 /**
  * Hook para manejar reserva temporal de stock de un producto
  * 
@@ -98,6 +100,52 @@ export const useStockReservation = (productId, totalStock = 0) => {
   // Obtener stock disponible
   const availableStock = stockReservationService.getAvailableStock(productId, totalStock);
 
+  /**
+   * Validar si se puede reservar una cantidad
+   */
+  const validateReservation = useCallback((quantity, currentQuantity = 0) => {
+    const totalQuantity = currentQuantity + quantity;
+
+    // Validar límite máximo de 10 unidades
+    if (totalQuantity > MAX_UNITS_PER_PRODUCT) {
+      return {
+        valid: false,
+        error: `Solo puedes reservar hasta ${MAX_UNITS_PER_PRODUCT} unidades de este producto.`,
+        type: 'warning'
+      };
+    }
+
+    // Validar stock disponible
+    if (quantity > availableStock) {
+      return {
+        valid: false,
+        error: `No hay suficiente stock disponible. Stock disponible: ${availableStock} unidades.`,
+        type: 'error'
+      };
+    }
+
+    return { valid: true };
+  }, [availableStock]);
+
+  /**
+   * Obtener información de tiempo restante de la reserva
+   */
+  const getTimeRemaining = useCallback(() => {
+    if (!reservation) return null;
+
+    const remainingMs = reservation.expiresIn;
+    const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
+    const hours = Math.floor((remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const minutes = Math.ceil((remainingMs % (60 * 1000)) / 60000);
+
+    return {
+      days,
+      hours,
+      minutes,
+      formatted: `${days}d ${hours}h ${minutes}m`
+    };
+  }, [reservation]);
+
   return {
     reservation,
     isReserved: !!reservation,
@@ -106,7 +154,10 @@ export const useStockReservation = (productId, totalStock = 0) => {
     reserve,
     updateQuantity,
     release,
-    renew
+    renew,
+    validateReservation,
+    getTimeRemaining,
+    MAX_UNITS_PER_PRODUCT
   };
 };
 
@@ -149,10 +200,31 @@ export const useAllReservations = () => {
     setReservations([]);
   }, []);
 
+  /**
+   * Limpiar reservas expiradas del carrito
+   */
+  const cleanupExpiredReservations = useCallback(() => {
+    const expiredReservations = [];
+    const allReservations = stockReservationService.getAllReservations();
+    
+    allReservations.forEach((res) => {
+      if (res.expiresIn <= 0) {
+        expiredReservations.push(res);
+        stockReservationService.releaseReservation(res.productId);
+      }
+    });
+
+    const active = stockReservationService.getAllReservations();
+    setReservations(active);
+    
+    return expiredReservations;
+  }, []);
+
   return {
     reservations,
     count: reservations.length,
-    clearAll
+    clearAll,
+    cleanupExpiredReservations
   };
 };
 

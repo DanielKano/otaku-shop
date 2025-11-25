@@ -1,57 +1,83 @@
 import { useState, useEffect } from 'react';
+import {
+  validateFullName,
+  validateEmail,
+  validatePhone,
+  validatePassword,
+} from '../utils/validation/validators';
 
-/**
- * Validadores simples para feedback en tiempo real
- */
+const errorMessages = {
+    fullName: {
+        length: "Debe tener entre 3 y 60 caracteres.",
+        chars: "Solo se permiten letras y espacios.",
+        no_vowel: "Debe contener al menos una vocal.",
+        no_consonant: "Debe contener al menos una consonante.",
+        repeated_chars: "No puede contener 4 letras iguales seguidas.",
+        repeated_word: "No se permiten palabras repetidas (ej. ‘Juan Juan’)",
+        incoherent_pattern: "Nombre contiene patrones inválidos: ‘asdf’, ‘qwerty’, etc.",
+        long_word: "Palabra demasiado larga.",
+        many_vowels_seq: "No más de 3 vocales seguidas.",
+        many_consonants_seq: "No más de 3 consonantes seguidas.",
+        word_too_short: "Cada palabra debe tener al menos 3 letras.",
+        word_repeated_chars: "Una palabra no puede consistir en la misma letra repetida."
+    },
+    email: {
+        length: "Correo demasiado largo (máximo 50 caracteres).",
+        double_dot: "No se permiten dos puntos consecutivos.",
+        format: "Formato de email inválido.",
+        local_short: "Debe tener mínimo 3 caracteres antes del @.",
+        domain_not_allowed: "Dominio no permitido (solo gmail.com, hotmail.com, outlook.com, yahoo.com, otaku.com, otakushop.com)."
+    },
+    phone: {
+        length: "El número debe tener exactamente 10 dígitos.",
+        prefix: "El número debe empezar con un prefijo móvil válido (300–323).",
+        too_many_repeats: "No se permiten repeticiones excesivas (por ejemplo 3000000000).",
+        sequence: "No se permiten secuencias numéricas (1234…)."
+    },
+    password: {
+        length: "Mínimo 8 caracteres.",
+        upper: "Incluye mayúscula (A–Z).",
+        lower: "Incluye minúscula (a–z).",
+        digit: "Incluye un número (0–9).",
+        special: "Incluye un carácter especial (!@#$%^&*).",
+        spaces: "No usar espacios."
+    }
+};
+
+const getErrorMessage = (field, errors) => {
+    if (errors.length > 0) {
+        const errorCode = errors[0];
+        return errorMessages[field] ? errorMessages[field][errorCode] || `Error de validación: ${errorCode}` : `Error de validación: ${errorCode}`;
+    }
+    return null;
+}
+
 const validators = {
   fullName: (value) => {
     if (!value) return null;
-    if (value.length < 3) return 'El nombre debe tener al menos 3 caracteres';
-    if (value.length > 100) return 'El nombre no puede exceder 100 caracteres';
-    
-    // Acepta letras, tildes, ñ, espacios, guiones y apóstrofes
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]+$/.test(value)) {
-      return 'Use solo letras, tildes, espacios, guiones o apóstrofes';
-    }
-    
-    // Validar que tenga al menos 2 palabras
-    const words = value.trim().split(/\s+/);
-    if (words.length < 2) return 'Ingresa tu nombre completo (nombre y apellido)';
-    
-    // Validar que no haya palabras repetidas
-    const lowerWords = words.map(w => w.toLowerCase());
-    const uniqueWords = new Set(lowerWords);
-    if (lowerWords.length !== uniqueWords.size) return 'No se permiten palabras repetidas';
-    
-    return null;
+    const result = validateFullName(value);
+    return getErrorMessage('fullName', result.errors);
   },
   
   email: (value) => {
     if (!value) return null;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) return 'Formato de email inválido';
-    return null;
+    const result = validateEmail(value);
+    return getErrorMessage('email', result.errors);
   },
   
   phone: (value) => {
     if (!value) return null;
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length !== 10) return 'El teléfono debe tener 10 dígitos';
-    if (!cleaned.startsWith('3')) return 'El teléfono debe comenzar con 3';
-    return null;
+    const result = validatePhone(value);
+    return getErrorMessage('phone', result.errors);
   },
   
   password: (value) => {
     if (!value) return null;
-    if (value.length < 8) return 'La contraseña debe tener al menos 8 caracteres';
-    if (!/[A-Z]/.test(value)) return 'Debe contener al menos una mayúscula';
-    if (!/[a-z]/.test(value)) return 'Debe contener al menos una minúscula';
-    if (!/\d/.test(value)) return 'Debe contener al menos un número';
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) return 'Debe contener al menos un carácter especial';
-    return null;
+    const result = validatePassword(value);
+    return getErrorMessage('password', result.errors);
   },
 
-  // Validadores para productos
+  // Keep the other validators for now
   productName: (value) => {
     if (!value) return 'El nombre del producto es requerido';
     if (value.length < 3) return 'El nombre debe tener al menos 3 caracteres';

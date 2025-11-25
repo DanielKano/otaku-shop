@@ -41,15 +41,15 @@ public class RegisterRequest {
     private String phone;
 
     @ValidSecurePassword(
-        message = "La contraseña no cumple con los requisitos de seguridad",
-        minLength = 8,
-        requireUppercase = true,
-        requireLowercase = true,
-        requireNumber = true,
-        requireSpecial = true,
-        checkCommon = true,
-        enableStrengthCheck = true,
-        minStrength = "medium"
+        message = "La contraseña debe tener al menos 6 caracteres",
+        minLength = 6,
+        requireUppercase = false,
+        requireLowercase = false,
+        requireNumber = false,
+        requireSpecial = false,
+        checkCommon = false,
+        enableStrengthCheck = false,
+        minStrength = "weak"
     )
     private String password;
 

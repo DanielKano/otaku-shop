@@ -5,12 +5,12 @@ import com.otakushop.dto.OrderDTO;
 import com.otakushop.dto.OrderItemDTO;
 import com.otakushop.entity.*;
 import com.otakushop.repository.OrderRepository;
-import com.otakushop.repository.OrderItemRepository;
 import com.otakushop.repository.ProductRepository;
 import com.otakushop.repository.UserRepository;
 import com.otakushop.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -25,16 +25,21 @@ import java.util.stream.Collectors;
 public class OrderService {
     
     private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final SecurityUtil securityUtil;
+    
+    // ✅ Constantes para retry de optimistic locking
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final long RETRY_DELAY_MS = 100;
     
     /**
      * Crea una nueva orden a partir del carrito
      */
     public OrderDTO createOrder(CreateOrderRequest request) {
+        @SuppressWarnings("null")
         Long userId = securityUtil.getCurrentUserId();
+        @SuppressWarnings("null")
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
         
@@ -90,9 +95,8 @@ public class OrderService {
             order.getItems().add(item);
             totalPrice = totalPrice.add(subtotal);
             
-            // Actualizar stock del producto
-            product.setStock(product.getStock() - itemRequest.getQuantity());
-            productRepository.save(product);
+            // ✅ Actualizar stock con retry para optimistic locking
+            updateProductStockWithRetry(product, -itemRequest.getQuantity());
         }
         
         order.setTotalPrice(totalPrice);
@@ -133,7 +137,9 @@ public class OrderService {
      * Cancela una orden
      */
     public OrderDTO cancelOrder(Long orderId) {
+        @SuppressWarnings("null")
         Long userId = securityUtil.getCurrentUserId();
+        @SuppressWarnings("null")
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Orden no encontrada"));
         
@@ -156,8 +162,8 @@ public class OrderService {
             Product product = productRepository.findByIdForUpdate(item.getProduct().getId())
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Producto no encontrado: " + item.getProduct().getId()));
-            product.setStock(product.getStock() + item.getQuantity());
-            productRepository.save(product);
+            // ✅ Restaurar stock con retry para optimistic locking
+            updateProductStockWithRetry(product, item.getQuantity());
         }
         
         order.setStatus(OrderStatus.CANCELLED);
@@ -172,6 +178,7 @@ public class OrderService {
      * Actualiza el estado de una orden (ADMIN)
      */
     public OrderDTO updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        @SuppressWarnings("null")
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Orden no encontrada"));
         
@@ -191,6 +198,41 @@ public class OrderService {
         Order updatedOrder = orderRepository.save(order);
         log.info("Estado de orden actualizado: ID={}, Status={}", orderId, newStatus);
         return convertToDTO(updatedOrder);
+    }
+    
+    // ✅ NUEVA: Actualizar stock del producto con retry para optimistic locking
+    private void updateProductStockWithRetry(Product product, int quantityChange) {
+        int attemptCount = 0;
+        while (attemptCount < MAX_RETRY_ATTEMPTS) {
+            try {
+                product.setStock(product.getStock() + quantityChange);
+                productRepository.save(product);
+                log.debug("Stock actualizado exitosamente para producto ID={}", product.getId());
+                return;
+            } catch (ObjectOptimisticLockingFailureException ex) {
+                attemptCount++;
+                if (attemptCount >= MAX_RETRY_ATTEMPTS) {
+                    log.error("Fallo al actualizar stock después de {} intentos para producto ID={}", 
+                            MAX_RETRY_ATTEMPTS, product.getId());
+                    throw new RuntimeException(
+                        "No se pudo completar la operación de stock. Por favor, intenta nuevamente.",
+                        ex);
+                }
+                // Refetch el producto antes de reintentar
+                @SuppressWarnings("null")
+                Product refetched = productRepository.findById(product.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
+                product = refetched;
+                log.debug("Reintentando actualización de stock: intento {}/{} para producto ID={}", 
+                        attemptCount, MAX_RETRY_ATTEMPTS, product.getId());
+                try {
+                    Thread.sleep(RETRY_DELAY_MS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Operación interrumpida", ie);
+                }
+            }
+        }
     }
     
     /**

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDebounce } from '../../hooks/useDebounce'
 import ProductGrid from '../../components/products/ProductGrid'
@@ -19,31 +19,58 @@ const ProductsPage = () => {
 
   const debouncedSearch = useDebounce(searchTerm, 500)
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true)
-      try {
-        const response = await services.productService.getAll({
-          search: debouncedSearch,
-          category: selectedCategory,
-          minPrice: priceRange[0],
-          maxPrice: priceRange[1],
-          page: currentPage,
-          limit: 12,
-        })
+  const fetchProducts = useCallback(async () => {
+    setLoading(true)
+    try {
+      const response = await services.productService.getAll({
+        search: debouncedSearch,
+        category: selectedCategory,
+        minPrice: priceRange[0],
+        maxPrice: priceRange[1],
+        page: currentPage,
+        limit: 12,
+      })
 
-        setProducts(response.data.products || [])
-        setTotalPages(response.data.pages || 1)
-      } catch (error) {
-        console.error('Error fetching products:', error)
-        setProducts([])
-      } finally {
-        setLoading(false)
-      }
+      setProducts(response.data.products || [])
+      setTotalPages(response.data.pages || 1)
+    } catch (error) {
+      console.error('Error fetching products:', error)
+      setProducts([])
+    } finally {
+      setLoading(false)
+    }
+  }, [debouncedSearch, selectedCategory, priceRange, currentPage])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [debouncedSearch, selectedCategory, priceRange, currentPage, fetchProducts])
+
+  // ✅ Recargar productos cuando vuelves a esta página (ej: desde ProductDetail)
+  useEffect(() => {
+    const handleFocusRefresh = () => {
+      fetchProducts()
     }
 
-    fetchProducts()
-  }, [debouncedSearch, selectedCategory, priceRange, currentPage])
+    // Recargar cuando la ventana/pestaña vuelve a tener foco
+    window.addEventListener('focus', handleFocusRefresh)
+    
+    // También recargar cuando se completa una compra
+    const handleCheckoutComplete = () => {
+      fetchProducts()
+    }
+    window.addEventListener('order_created', handleCheckoutComplete)
+
+    return () => {
+      window.removeEventListener('focus', handleFocusRefresh)
+      window.removeEventListener('order_created', handleCheckoutComplete)
+    }
+  }, [fetchProducts])
+
+  // ✅ Actualizar stock cuando se agrega producto al carrito
+  const handleAddToCart = async (productId, quantity) => {
+    // Recargar la lista completa de productos para reflejar el nuevo stock
+    await fetchProducts()
+  }
 
   const handleProductClick = (productId) => {
     // Navigate to product detail page
@@ -91,6 +118,7 @@ const ProductsPage = () => {
               products={products}
               loading={loading}
               onProductClick={handleProductClick}
+              onAddToCart={handleAddToCart}
               columns={3}
             />
 

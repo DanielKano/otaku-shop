@@ -6,19 +6,29 @@ import Button from '../ui/Button'
 import ValidatedInput from '../ui/ValidatedInput'
 import PasswordStrengthIndicator from '../ui/PasswordStrengthIndicator'
 import Alert from '../ui/Alert'
+import {
+  validateFullName,
+  validateEmail,
+  validatePhone,
+  validatePassword,
+} from '../../utils/validation/validators';
 
 const registerSchema = z
   .object({
-    name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-    email: z.string().email('Email inválido'),
-    phone: z.string().regex(/^\d{10}$/, 'El teléfono debe tener 10 dígitos'),
+    name: z.string().refine((val) => validateFullName(val).ok, {
+      message: 'Nombre inválido',
+    }),
+    email: z.string().refine((val) => validateEmail(val).ok, {
+      message: 'Email inválido',
+    }),
+    phone: z.string().refine((val) => validatePhone(val).ok, {
+        message: 'Teléfono inválido',
+    }),
     password: z
       .string()
-      .min(8, 'La contraseña debe tener al menos 8 caracteres')
-      .regex(/[A-Z]/, 'Debe contener una mayúscula')
-      .regex(/[a-z]/, 'Debe contener una minúscula')
-      .regex(/[0-9]/, 'Debe contener un número')
-      .regex(/[@$!%*?&]/, 'Debe contener un carácter especial'),
+      .refine((val) => validatePassword(val).ok, {
+        message: 'Contraseña inválida',
+      }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {

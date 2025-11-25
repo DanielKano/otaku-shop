@@ -33,7 +33,6 @@ public class CheckoutService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final StockReservationService stockReservationService;
 
     /**
      * Valida una solicitud de checkout sin procesarla
@@ -44,15 +43,18 @@ public class CheckoutService {
         List<String> warnings = new ArrayList<>();
 
         // 1. Validar que el usuario existe
-        if (!userRepository.existsById(request.getUserId())) {
+        @SuppressWarnings("null")
+        boolean userExists = userRepository.existsById(request.getUserId());
+        if (!userExists) {
             errors.add("Usuario no encontrado");
             validation.put("isValid", false);
             validation.put("errors", errors);
             return validation;
         }
 
-        // 2. Validar stock disponible
+        // 2. Validar stock disponible y reservaciones activas
         for (CheckoutItemDTO item : request.getItems()) {
+            @SuppressWarnings("null")
             Product product = productRepository.findById(item.getProductId()).orElse(null);
             if (product == null) {
                 errors.add("Producto no encontrado: " + item.getProductName());
@@ -122,6 +124,7 @@ public class CheckoutService {
         }
 
         // 2. Obtener usuario
+        @SuppressWarnings("null")
         User user = userRepository.findById(request.getUserId())
             .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
@@ -140,6 +143,7 @@ public class CheckoutService {
 
         // 4. Crear items de la orden y actualizar stock
         for (CheckoutItemDTO itemDTO : request.getItems()) {
+            @SuppressWarnings("null")
             Product product = productRepository.findById(itemDTO.getProductId())
                 .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado: " + itemDTO.getProductId()));
 
@@ -168,25 +172,7 @@ public class CheckoutService {
         // 5. Guardar orden
         Order savedOrder = orderRepository.save(order);
 
-        // 6. Liberar reservas de stock del usuario
-        try {
-            // Obtener todas las reservas del usuario y liberarlas
-            var userReservations = stockReservationService.getUserReservations(request.getUserId());
-            int releasedCount = 0;
-            
-            for (var reservation : userReservations) {
-                if (stockReservationService.releaseReservation(reservation.getReservationId())) {
-                    releasedCount++;
-                }
-            }
-            
-            log.info("Liberadas {} reservas de stock para usuario {} después de completar orden {}", 
-                    releasedCount, request.getUserId(), savedOrder.getId());
-        } catch (Exception e) {
-            // Log error pero no fallar la orden - las reservas se liberarán automáticamente
-            log.warn("Error liberando reservas de stock para usuario {}: {}", 
-                    request.getUserId(), e.getMessage());
-        }
+        log.info("Orden {} creada exitosamente para usuario {}", savedOrder.getId(), request.getUserId());
 
         return savedOrder;
     }

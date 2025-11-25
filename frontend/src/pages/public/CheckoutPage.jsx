@@ -9,7 +9,7 @@ import services from '../../services'
 
 const CheckoutPage = () => {
   const navigate = useNavigate()
-  const { items, total, clearCart } = useCart()
+  const { items, total, clearCart, validateCheckout } = useCart()
   const { addNotification } = useNotification()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -48,12 +48,32 @@ const CheckoutPage = () => {
     e.preventDefault()
     setIsLoading(true)
     try {
+      // ✅ VALIDAR STOCK ANTES DE CREAR ORDEN
+      const validation = validateCheckout()
+      if (!validation.allValid) {
+        const issues = validation.details
+          .filter(d => !d.hasEnoughStock)
+          .map(d => `${d.name}: necesitas ${d.requested}, disponible ${d.available}`)
+          .join('; ')
+        
+        addNotification({
+          type: 'error',
+          message: `Problemas de stock: ${issues}. Por favor, ajusta tu carrito.`,
+        })
+        setIsLoading(false)
+        return
+      }
+
       const response = await services.orderService.create({
         items,
         shipping: formData,
         total,
       })
       clearCart()
+      
+      // ✅ Disparar evento para que ProductsPage recargue productos
+      window.dispatchEvent(new CustomEvent('order_created', { detail: { orderId: response.data.orderId } }))
+      
       addNotification({
         type: 'success',
         message: 'Compra realizada exitosamente',

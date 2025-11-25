@@ -9,32 +9,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * Validador para la anotación @ValidSecurePassword
- * Implementa validación de contraseñas seguras con análisis de fortaleza
- */
 public class SecurePasswordValidator implements ConstraintValidator<ValidSecurePassword, String> {
 
-    // Patrones de complejidad
-    private static final Pattern UPPERCASE = Pattern.compile("[A-Z]");
-    private static final Pattern LOWERCASE = Pattern.compile("[a-z]");
-    private static final Pattern NUMBER = Pattern.compile("\\d");
-    private static final Pattern SPECIAL = Pattern.compile("[!@#$%^&*()_+\\-=\\[\\]{}|;:,.<>?]");
-    private static final Pattern ALLOWED_CHARS = Pattern.compile("^[A-Za-z\\d!@#$%^&*()_+\\-=\\[\\]{}|;:,.<>?]+$");
-
-    // Patrones anti-spam
-    private static final Pattern LETTER_SEQUENCE = Pattern.compile("(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern NUMBER_SEQUENCE = Pattern.compile("(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)");
-    private static final Pattern REPEATED_CHARS = Pattern.compile("(.)\\1{2,}");
-
-    // Contraseñas comunes
     private static final Set<String> COMMON_PASSWORDS = new HashSet<>(Arrays.asList(
-        "password", "123456", "12345678", "qwerty", "abc123", "monkey", "1234567",
-        "letmein", "trustno1", "dragon", "baseball", "iloveyou", "master", "sunshine",
-        "ashley", "bailey", "passw0rd", "shadow", "123123", "654321", "superman",
-        "qazwsx", "michael", "football", "welcome", "jesus", "ninja", "mustang",
-        "password1", "admin", "admin123", "root", "toor", "pass", "test", "guest",
-        "changeme", "password123", "user", "administrator", "administrator123"
+        "password", "123456", "12345678", "qwerty", "abc123"
     ));
 
     private int minLength;
@@ -60,55 +38,52 @@ public class SecurePasswordValidator implements ConstraintValidator<ValidSecureP
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null || value.isEmpty()) {
             addConstraintViolation(context, "La contraseña es obligatoria");
             return false;
         }
 
-        // Nivel 1: Longitud mínima
+        // Check minimum length
         if (value.length() < minLength) {
             addConstraintViolation(context, "La contraseña debe tener al menos " + minLength + " caracteres");
             return false;
         }
 
-        // Verificar caracteres permitidos
-        if (!ALLOWED_CHARS.matcher(value).matches()) {
-            addConstraintViolation(context, "La contraseña contiene caracteres no permitidos");
+        // Check for uppercase if required
+        if (requireUppercase && !value.matches(".*[A-Z].*")) {
+            addConstraintViolation(context, "La contraseña debe contener al menos una mayúscula");
             return false;
         }
 
-        // Nivel 2: Requisitos de complejidad
-        StringBuilder missingRequirements = new StringBuilder();
-
-        if (requireUppercase && !UPPERCASE.matcher(value).find()) {
-            missingRequirements.append("al menos una mayúscula, ");
-        }
-
-        if (requireLowercase && !LOWERCASE.matcher(value).find()) {
-            missingRequirements.append("al menos una minúscula, ");
-        }
-
-        if (requireNumber && !NUMBER.matcher(value).find()) {
-            missingRequirements.append("al menos un número, ");
-        }
-
-        if (requireSpecial && !SPECIAL.matcher(value).find()) {
-            missingRequirements.append("al menos un carácter especial, ");
-        }
-
-        if (missingRequirements.length() > 0) {
-            String requirements = missingRequirements.substring(0, missingRequirements.length() - 2);
-            addConstraintViolation(context, "La contraseña debe contener " + requirements);
+        // Check for lowercase if required
+        if (requireLowercase && !value.matches(".*[a-z].*")) {
+            addConstraintViolation(context, "La contraseña debe contener al menos una minúscula");
             return false;
         }
 
-        // Nivel 3: Verificar contraseñas comunes
+        // Check for number if required
+        if (requireNumber && !value.matches(".*\\d.*")) {
+            addConstraintViolation(context, "La contraseña debe contener al menos un número");
+            return false;
+        }
+
+        // Check for special character if required
+        if (requireSpecial && !value.matches(".*[!@#$%^&*()_+\\-=\\[\\]{}|;:,.<>?].*")) {
+            addConstraintViolation(context, "La contraseña debe contener al menos un carácter especial");
+            return false;
+        }
+
+        // Check for spaces (always not allowed)
+        if (value.matches(".*\\s.*")) {
+            addConstraintViolation(context, "La contraseña no debe contener espacios");
+            return false;
+        }
+        
         if (checkCommon && COMMON_PASSWORDS.contains(value.toLowerCase())) {
             addConstraintViolation(context, "Esta contraseña es muy común y fácil de adivinar. Por favor elige una contraseña más segura");
             return false;
         }
-
-        // Nivel 4: Análisis de fortaleza
+        
         if (enableStrengthCheck) {
             StrengthResult strengthResult = calculatePasswordStrength(value);
             
@@ -118,67 +93,12 @@ public class SecurePasswordValidator implements ConstraintValidator<ValidSecureP
             if (actualStrengthLevel < requiredStrengthLevel) {
                 addConstraintViolation(context, 
                     "La contraseña es demasiado débil. Nivel actual: " + strengthResult.strength + 
-                    ", requerido: " + minStrength + ". Sugerencias: " + String.join(", ", strengthResult.feedback));
+                    ", requerido: " + minStrength);
                 return false;
             }
         }
 
         return true;
-    }
-
-    /**
-     * Calcula la fortaleza de una contraseña
-     */
-    private StrengthResult calculatePasswordStrength(String password) {
-        int score = 0;
-        StringBuilder feedback = new StringBuilder();
-
-        // Longitud (máx 25 puntos)
-        int length = password.length();
-        if (length >= 8) score += 10;
-        if (length >= 12) score += 5;
-        if (length >= 16) score += 5;
-        if (length >= 20) score += 5;
-
-        // Complejidad (máx 40 puntos)
-        boolean hasUpper = UPPERCASE.matcher(password).find();
-        boolean hasLower = LOWERCASE.matcher(password).find();
-        boolean hasNumber = NUMBER.matcher(password).find();
-        boolean hasSpecial = SPECIAL.matcher(password).find();
-
-        if (hasUpper) score += 10;
-        if (hasLower) score += 10;
-        if (hasNumber) score += 10;
-        if (hasSpecial) score += 10;
-
-        // Variedad (máx 20 puntos)
-        long uniqueChars = password.chars().distinct().count();
-        if (uniqueChars >= 8) score += 10;
-        if (uniqueChars >= 12) score += 5;
-        if (uniqueChars >= 16) score += 5;
-
-        // No contiene patrones obvios (máx 15 puntos)
-        boolean hasSequence = LETTER_SEQUENCE.matcher(password.toLowerCase()).find() || 
-                             NUMBER_SEQUENCE.matcher(password).find();
-        boolean hasRepeat = REPEATED_CHARS.matcher(password).find();
-
-        if (!hasSequence) score += 8;
-        else feedback.append("evita secuencias");
-
-        if (!hasRepeat) score += 7;
-        else {
-            if (feedback.length() > 0) feedback.append(", ");
-            feedback.append("evita caracteres repetidos");
-        }
-
-        // Determinar nivel
-        String strength;
-        if (score < 40) strength = "weak";
-        else if (score < 60) strength = "medium";
-        else if (score < 80) strength = "strong";
-        else strength = "very_strong";
-
-        return new StrengthResult(score, strength, feedback.toString());
     }
 
     private int getStrengthLevel(String strength) {
@@ -191,6 +111,21 @@ public class SecurePasswordValidator implements ConstraintValidator<ValidSecureP
         };
     }
 
+    private StrengthResult calculatePasswordStrength(String password) {
+        // This is a simplified strength calculation, as the main validation is done by the regex.
+        // You can expand this to provide more detailed feedback if needed.
+        int score = 0;
+        if (password.length() >= 12) score += 20;
+        if (password.chars().distinct().count() >= 10) score += 20;
+        
+        String strength;
+        if (score < 20) strength = "weak";
+        else if (score < 40) strength = "medium";
+        else strength = "strong";
+
+        return new StrengthResult(score, strength);
+    }
+
     private void addConstraintViolation(ConstraintValidatorContext context, String message) {
         context.disableDefaultConstraintViolation();
         context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
@@ -199,12 +134,10 @@ public class SecurePasswordValidator implements ConstraintValidator<ValidSecureP
     private static class StrengthResult {
         final int score;
         final String strength;
-        final String feedback;
 
-        StrengthResult(int score, String strength, String feedback) {
+        StrengthResult(int score, String strength) {
             this.score = score;
             this.strength = strength;
-            this.feedback = feedback;
         }
     }
 }

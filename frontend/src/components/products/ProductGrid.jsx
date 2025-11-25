@@ -1,6 +1,6 @@
 import ProductCard from './ProductCard'
 
-const ProductGrid = ({ products = [], loading = false, onProductClick, columns = 4 }) => {
+const ProductGrid = ({ products = [], loading = false, onProductClick, onAddToCart, columns = 4 }) => {
   if (loading) {
     return (
       <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${columns} gap-6`}>
@@ -37,6 +37,7 @@ const ProductGrid = ({ products = [], loading = false, onProductClick, columns =
           key={product.id}
           product={product}
           onViewDetails={onProductClick}
+          onAddToCart={onAddToCart}
         />
       ))}
     </div>

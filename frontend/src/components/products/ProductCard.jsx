@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useNotification } from '../../hooks/useNotification'
 import { formatPrice, getStockStatus } from '../../utils/formatters'
 
-const ProductCard = ({ product, onViewDetails }) => {
+const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1)
   const { addItem } = useCart()
   const { isAuthenticated } = useAuth()
@@ -35,6 +35,11 @@ const ProductCard = ({ product, onViewDetails }) => {
       type: 'success',
     })
     setQuantity(1)
+    
+    // ✅ Notificar al padre para actualizar el stock
+    if (onAddToCart) {
+      onAddToCart(product.id, quantity)
+    }
   }
 
   const isOutOfStock = !product.stock || product.stock === 0
@@ -45,7 +50,7 @@ const ProductCard = ({ product, onViewDetails }) => {
       <div className="aspect-square bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative group">
         {product.imageUrl ? (
           <img
-            src={product.imageUrl}
+            src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
             alt={product.name}
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
           />

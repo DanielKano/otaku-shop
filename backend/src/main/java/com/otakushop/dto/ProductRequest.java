@@ -2,10 +2,11 @@ package com.otakushop.dto;
 
 import com.otakushop.validation.annotations.ValidProductName;
 import com.otakushop.validation.annotations.ValidProductDescription;
-import com.otakushop.validation.annotations.ValidProductImage;
 import lombok.*;
 import jakarta.validation.constraints.*;
+import jakarta.annotation.Nullable;
 import java.math.BigDecimal;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * DTO para creación/actualización de productos con validaciones avanzadas.
@@ -32,9 +33,9 @@ public class ProductRequest {
 
     @NotBlank(message = "La descripción es obligatoria")
     @ValidProductDescription(
-        minChars = 30,
-        maxChars = 1000,
-        minWords = 10,
+        minChars = 10,
+        maxChars = 500,
+        minWords = 3,
         enableSpamCheck = true
     )
     private String description;
@@ -48,8 +49,8 @@ public class ProductRequest {
     private BigDecimal originalPrice;
 
     @NotBlank(message = "La categoría es requerida")
-    @Pattern(regexp = "^(Manga|Figura|Ropa|Accesorios)$", 
-             message = "La categoría debe ser: Manga, Figura, Ropa o Accesorios")
+    @Pattern(regexp = "^(Manga|Anime|Figuras|Ropa|Accesorios|Libros|Otros)$", 
+             message = "La categoría debe ser: Manga, Anime, Figuras, Ropa, Accesorios, Libros u Otros")
     private String category;
 
     @NotNull(message = "El stock es requerido")
@@ -57,11 +58,8 @@ public class ProductRequest {
     @Max(value = 100000, message = "El stock no puede exceder 100,000 unidades")
     private Integer stock;
 
-    @ValidProductImage(
-        requireHttps = false, // Permitir HTTP para desarrollo
-        allowedExtensions = {"jpg", "jpeg", "png", "webp"}
-    )
-    private String imageUrl;
+    @Nullable
+    private MultipartFile imageFile;
 
     @Builder.Default
     private Boolean active = true;
