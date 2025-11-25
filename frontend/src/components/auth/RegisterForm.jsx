@@ -38,6 +38,7 @@ const registerSchema = z
 
 const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
   const [apiError, setApiError] = useState(null)
+  const [fieldErrors, setFieldErrors] = useState({}) // Errores mejorados
   const {
     register,
     handleSubmit,
@@ -45,6 +46,7 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
     watch,
   } = useForm({
     resolver: zodResolver(registerSchema),
+    mode: 'onBlur', // Validar al salir del campo
   })
 
   const password = watch('password', '')
@@ -55,8 +57,26 @@ const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
 
   const onSubmit = async (data) => {
     setApiError(null)
+    setFieldErrors({}) // Limpiar errores previos
     try {
-      // Send all data to backend (it needs confirmPassword for validation)
+      // Validación final antes de enviar
+      const nameValidation = validateFullName(data.name)
+      const emailValidation = validateEmail(data.email)
+      const phoneValidation = validatePhone(data.phone)
+      const passwordValidation = validatePassword(data.password)
+
+      const allErrors = {}
+      if (!nameValidation.ok) allErrors.name = nameValidation.errors
+      if (!emailValidation.ok) allErrors.email = emailValidation.errors
+      if (!phoneValidation.ok) allErrors.phone = phoneValidation.errors
+      if (!passwordValidation.ok) allErrors.password = passwordValidation.errors
+
+      if (Object.keys(allErrors).length > 0) {
+        setFieldErrors(allErrors)
+        return
+      }
+
+      // Send all data to backend
       await onRegister?.(data)
     } catch (error) {
       // Mostrar errores de validación del backend
