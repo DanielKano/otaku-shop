@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react'
 import services from '../../services'
 
 const ProductDetail = ({ product, onBack }) => {
-  const [quantity, setQuantity] = useState(1)
   const [isFavorite, setIsFavorite] = useState(false)
   const [loadingFavorite, setLoadingFavorite] = useState(false)
   const { addItem } = useCart()
@@ -60,16 +59,15 @@ const ProductDetail = ({ product, onBack }) => {
       return
     }
 
-    // ✅ Validar contra stock disponible
-    if (quantity > product.stock) {
+    if (product.stock <= 0) {
       addNotification({
-        message: `Solo hay ${product.stock} unidades disponibles`,
+        message: 'Producto agotado',
         type: 'error',
       })
       return
     }
 
-    addItem(product, quantity)
+    addItem(product, 1) // Always add one unit
     addNotification({
       message: `${product.name} agregado al carrito`,
       type: 'success',
@@ -230,34 +228,6 @@ const ProductDetail = ({ product, onBack }) => {
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-base">
                 {product.description}
               </p>
-            </div>
-          )}
-
-          {/* Quantity Selector */}
-          {!isOutOfStock && (
-            <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Cantidad:
-              </label>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 glass-effect rounded-lg hover:scale-105 transition-transform font-bold text-lg"
-                >
-                  −
-                </button>
-                <span className="text-2xl font-semibold min-w-12 text-center text-gray-900 dark:text-white">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() =>
-                    setQuantity(Math.min(product.stock || 99, quantity + 1))
-                  }
-                  className="px-4 py-2 glass-effect rounded-lg hover:scale-105 transition-transform font-bold text-lg"
-                >
-                  +
-                </button>
-              </div>
             </div>
           )}
 

@@ -166,6 +166,8 @@ public class CartService {
         
         // ✅ VALIDACIÓN 1: Máximo 10 unidades por usuario
         if (quantity > MAX_UNITS_PER_USER) {
+            // Enviar notificación al frontend si se excede el límite
+            log.warn("Intento de agregar más de {} unidades al carrito para el producto {}", MAX_UNITS_PER_USER, productId);
             throw new IllegalArgumentException(
                 String.format("Solo puedes comprar hasta %d unidades por producto. Intentas: %d",
                     MAX_UNITS_PER_USER, quantity)
@@ -220,8 +222,22 @@ public class CartService {
         log.info("🟢 CART ITEM SAVED - cartItemId={}, newQuantity={}", cartItemId, updated.getQuantity());
         
         CartItemDTO result = convertToDTO(updated);
+        
+        // Verificar que el objeto result no sea nulo antes de acceder a sus propiedades
+        if (result == null) {
+            log.error("El objeto result es nulo. No se puede acceder a sus propiedades.");
+            throw new IllegalStateException("El objeto result no puede ser nulo.");
+        }
+
+        // Asegurarse de que las propiedades de result sean válidas
+        if (result.getId() == null || result.getProductId() == null || result.getQuantity() == null) {
+            log.error("Propiedades nulas en el objeto result: id={}, productId={}, quantity={}",
+                      result.getId(), result.getProductId(), result.getQuantity());
+            throw new IllegalStateException("Propiedades nulas en el objeto result.");
+        }
+
         log.info("🟢 updateItem() SUCCESS - returning CartItemDTO: id={}, productId={}, quantity={}", 
-            result.getId(), result.getProductId(), result.getQuantity());
+                 result.getId(), result.getProductId(), result.getQuantity());
         
         return result;
     }

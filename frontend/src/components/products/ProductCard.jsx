@@ -3,13 +3,14 @@ import Button from '../ui/Button'
 import { useCart } from '../../hooks/useCart'
 import { useAuth } from '../../hooks/useAuth'
 import { useNotification } from '../../hooks/useNotification'
-import { formatPrice, getStockStatus } from '../../utils/formatters'
+import { formatPrice } from '../../utils/formatters'
+import Modal from '../ui/Modal'
 
 const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
-  const [quantity, setQuantity] = useState(1)
-  const { addItem } = useCart()
+  const { cart, addItem } = useCart()
   const { isAuthenticated } = useAuth()
   const { addNotification } = useNotification()
+  const [showLimitModal, setShowLimitModal] = useState(false)
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -20,25 +21,28 @@ const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
       return
     }
 
-    // ✅ Validar contra stock disponible
-    if (quantity > product.stock) {
-      addNotification({
-        message: `Solo hay ${product.stock} unidades disponibles`,
-        type: 'error',
-      })
+    if (!cart) return
+
+    const totalQuantityInCart = cart.reduce((total, item) => {
+      if (item.id === product.id) {
+        return total + item.quantity
+      }
+      return total
+    }, 0)
+
+    if (totalQuantityInCart + 1 > 10) {
+      setShowLimitModal(true)
       return
     }
 
-    addItem(product, quantity)
+    addItem(product, 1)
     addNotification({
       message: `${product.name} agregado al carrito`,
       type: 'success',
     })
-    setQuantity(1)
-    
-    // ✅ Notificar al padre para actualizar el stock
+
     if (onAddToCart) {
-      onAddToCart(product.id, quantity)
+      onAddToCart(product.id, 1)
     }
   }
 
@@ -100,28 +104,6 @@ const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
           </div>
         )}
 
-        {/* Quantity Selector */}
-        {!isOutOfStock && isAuthenticated && (
-          <div className="flex items-center gap-2 mb-4">
-            <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-            >
-              −
-            </button>
-            <span className="flex-1 text-center">{quantity}</span>
-            <button
-              onClick={() =>
-                setQuantity(Math.min(product.stock || 1, quantity + 1))
-              }
-              disabled={quantity >= product.stock}
-              className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              +
-            </button>
-          </div>
-        )}
-
         {/* Actions */}
         <div className="flex gap-2">
           <Button
@@ -143,6 +125,12 @@ const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
           </Button>
         </div>
       </div>
+      {showLimitModal && (
+        <Modal onClose={() => setShowLimitModal(false)}>
+          <p>No puedes agregar más de 10 unidades de este producto al carrito.</p>
+          <button onClick={() => setShowLimitModal(false)}>Cerrar</button>
+        </Modal>
+      )}
     </div>
   )
 }
