@@ -81,7 +81,8 @@ export const useCartValidations = () => {
     // Si es aumento, validar stock disponible
     if (quantityDifference > 0) {
       const reserved = stockReservationService.getReservedQuantity(productId)
-      const totalStock = item.stock || 0
+      // ✅ FIXED: Use productStock from backend instead of item.stock
+      const totalStock = item.productStock || 0
       const availableStock = totalStock - reserved
 
       if (quantityDifference > availableStock) {
@@ -113,20 +114,23 @@ export const useCartValidations = () => {
 
   /**
    * Obtiene información de stock disponible de un producto
+   * ✅ FIXED: Use backend's productStock instead of local reservation system
    * @param {number} productId - ID del producto
-   * @returns {Object} { totalStock, reserved, available }
+   * @returns {Object} { totalStock, available }
    */
   const getStockInfo = useCallback((productId) => {
     const item = items.find((i) => i.id === productId)
     if (!item) return null
 
-    const totalStock = item.stock || 0
-    const reserved = stockReservationService.getReservedQuantity(productId)
-    const available = totalStock - reserved
+    // ✅ Backend provides current stock in productStock after all cart operations
+    const totalStock = item.productStock || 0
+    
+    // Since backend manages stock directly, available = totalStock
+    // (reservations are already reflected in productStock from backend)
+    const available = totalStock
 
     return {
       totalStock,
-      reserved,
       available,
       isLowStock: available < 5
     }

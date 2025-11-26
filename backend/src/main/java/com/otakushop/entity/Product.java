@@ -23,11 +23,6 @@ public class Product extends AuditableEntity {  // ✅ Heredar para auditoría
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ✅ Agregar @Version para optimistic locking
-    @Version
-    @Column(name = "version")
-    private Long version;
-
     @Column(name = "name", nullable = false, length = 255)
     private String name;  // ✅ NOT NULL
 

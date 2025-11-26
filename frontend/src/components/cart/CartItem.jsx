@@ -1,15 +1,23 @@
 import { useMemo } from 'react'
 import Button from '../ui/Button'
 import useCartValidations from '../../hooks/useCartValidations'
-import stockReservationService from '../../services/stockReservationService'
+
+// ✅ Build full image URL for cart items
+const buildImageUrl = (imageName) => {
+  if (!imageName) return null
+  if (imageName.startsWith('http')) return imageName // Already full URL
+  // Backend returns just filename, must prepend API path
+  return `http://localhost:8080/api/uploads/images/${imageName}`
+}
 
 const CartItem = ({ item, onQuantityChange, onRemove }) => {
   const { getReservationTimeRemaining, getStockInfo } = useCartValidations()
   const maxStock = item.productStock || 0
+  const imageUrl = useMemo(() => buildImageUrl(item.productImage), [item.productImage])
   const timeRemaining = useMemo(() => getReservationTimeRemaining(item.id), [item.id, getReservationTimeRemaining])
   const stockInfo = useMemo(() => getStockInfo(item.id), [item.id, getStockInfo])
   
-  // ✅ Cálculo correcto: disponible es lo que queda después de reservas
+  // ✅ Available stock is the current backend productStock (already accounts for cart operations)
   const availableStock = stockInfo ? stockInfo.available : maxStock
   const isAtMaxStock = item.quantity >= availableStock || item.quantity >= 10
   const exceedsStock = item.quantity > maxStock
@@ -18,11 +26,19 @@ const CartItem = ({ item, onQuantityChange, onRemove }) => {
     <div className="flex gap-4 py-4 border-b border-gray-200 dark:border-gray-700">
       {/* Image */}
       <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl overflow-hidden">
-        <img
-          src={item.productImage || '🎀'}
-          alt={item.productName}
-          className="w-full h-full object-cover"
-        />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={item.productName}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none'
+              e.target.parentElement.textContent = '🎀'
+            }}
+          />
+        ) : (
+          <span>🎀</span>
+        )}
       </div>
 
       {/* Info */}
@@ -83,7 +99,10 @@ const CartItem = ({ item, onQuantityChange, onRemove }) => {
       {/* Quantity Control */}
       <div className="flex items-center gap-2">
         <button
-          onClick={() => onQuantityChange?.(item.id, item.quantity - 1)}
+          onClick={() => {
+            console.debug('[CartItem] decrease click', item.id, item.quantity - 1)
+            onQuantityChange?.(item.id, item.quantity - 1)
+          }}
           className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
           disabled={item.quantity <= 1}
           aria-label="Disminuir cantidad"
@@ -94,7 +113,10 @@ const CartItem = ({ item, onQuantityChange, onRemove }) => {
           {item.quantity}
         </span>
         <button
-          onClick={() => onQuantityChange?.(item.id, item.quantity + 1)}
+          onClick={() => {
+            console.debug('[CartItem] increase click', item.id, item.quantity + 1)
+            onQuantityChange?.(item.id, item.quantity + 1)
+          }}
           className={`px-2 py-1 rounded transition-all ${
             isAtMaxStock
               ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed opacity-50'
@@ -120,7 +142,10 @@ const CartItem = ({ item, onQuantityChange, onRemove }) => {
 
       {/* Remove Button */}
       <button
-        onClick={() => onRemove?.(item.id)}
+        onClick={() => {
+          console.debug('[CartItem] remove click', item.id)
+          onRemove?.(item.id)
+        }}
         className="text-red-500 hover:text-red-700 font-bold text-xl flex-shrink-0"
       >
         ✕

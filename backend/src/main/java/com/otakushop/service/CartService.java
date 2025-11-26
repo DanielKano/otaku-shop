@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +28,6 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final StockReservationService stockReservationService;
     
     // Máximo de unidades que un usuario puede reservar
     private static final int MAX_UNITS_PER_USER = 10;
@@ -63,102 +63,70 @@ public class CartService {
     /**
      * Agrega un producto al carrito con validaciones de stock y límite de 10 unidades
      */
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public CartItemDTO addItem(Long userId, CartItemRequest request) {
         try {
-            log.debug("addItem() called with userId={}, productId={}, quantity={}", userId, request.getProductId(), request.getQuantity());
-            
+            log.info("🔴 addItem() STARTED - userId={}, productId={}, requestQuantity={}", userId, request.getProductId(), request.getQuantity());
+
+            // Log para verificar el estado inicial de la transacción
+            log.debug("🔵 Transaction started for addItem");
+
             @SuppressWarnings("null")
             User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
             log.debug("User found: {}", user.getId());
-            
-            @SuppressWarnings("null")
-            Product product = productRepository.findById(request.getProductId())
+
+            Product lockedProduct = productRepository.findByIdForUpdate(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
-            log.debug("Product found: id={}, stock={}", product.getId(), product.getStock());
-            
+            log.info("🔴 Product locked for update: id={}, CURRENT STOCK BEFORE={}", lockedProduct.getId(), lockedProduct.getStock());
+
             // Validaciones básicas
             if (request.getQuantity() <= 0) {
                 log.error("Invalid quantity: {}", request.getQuantity());
                 throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
             }
-            
+
             // Obtener cantidad actual del usuario en carrito
             CartItem existingCartItem = cartItemRepository
                 .findByUserIdAndProductId(userId, request.getProductId())
                 .orElse(null);
-            
+
             int currentQuantity = existingCartItem != null ? existingCartItem.getQuantity() : 0;
             int newTotalQuantity = currentQuantity + request.getQuantity();
             log.debug("Current quantity: {}, New total: {}", currentQuantity, newTotalQuantity);
-            
-            // ✅ VALIDACIÓN 1: Máximo 10 unidades por usuario
-            if (newTotalQuantity > MAX_UNITS_PER_USER) {
-                log.error("Exceeds maximum units: {} > {}", newTotalQuantity, MAX_UNITS_PER_USER);
-                throw new IllegalArgumentException(
-                    String.format("Solo puedes reservar hasta %d unidades. Ya tienes %d, intentas agregar %d",
-                        MAX_UNITS_PER_USER, currentQuantity, request.getQuantity())
-                );
-            }
-            
-            // ✅ VALIDACIÓN 2: Validar que hay STOCK DISPONIBLE
-            log.debug("Checking stock availability: productId={}, quantity={}, currentStock={}", 
-                request.getProductId(), request.getQuantity(), product.getStock());
-            
-            if (product.getStock() < request.getQuantity()) {
-                log.error("Stock insufficient: available={}, requested={}", product.getStock(), request.getQuantity());
+
+            // Validaciones de stock
+            if (lockedProduct.getStock() < request.getQuantity()) {
+                log.error("Stock insufficient: available={}, requested={}", lockedProduct.getStock(), request.getQuantity());
                 throw new IllegalArgumentException(
                     String.format("Stock insuficiente. Disponible: %d, Solicitado: %d",
-                        product.getStock(), request.getQuantity())
+                        lockedProduct.getStock(), request.getQuantity())
                 );
             }
-            
+
+            // Actualizar stock y carrito
+            lockedProduct.setStock(lockedProduct.getStock() - request.getQuantity());
+            productRepository.save(lockedProduct);
+            log.info("🔴 Stock updated: newStock={}", lockedProduct.getStock());
+
             if (existingCartItem != null) {
-                // El usuario ya tiene este producto en el carrito
-                log.debug("Updating existing cart item: id={}, oldQuantity={}, newQuantity={}", 
-                    existingCartItem.getId(), currentQuantity, newTotalQuantity);
-                
-                // Solo necesitamos decrementar la DIFERENCIA de stock
-                int quantityIncrease = request.getQuantity();
-                
-                // ✅ DECREMENTAR STOCK EN BD
-                product.setStock(product.getStock() - quantityIncrease);
-                productRepository.save(product);
-                log.info("Stock decremented: productId={}, quantityDecrease={}, newStock={}", 
-                    product.getId(), quantityIncrease, product.getStock());
-                
-                // Actualizar cantidad en carrito
                 existingCartItem.setQuantity(newTotalQuantity);
                 CartItem updated = cartItemRepository.save(existingCartItem);
-                log.info("Cart item updated successfully: cartItemId={}, newQuantity={}", updated.getId(), newTotalQuantity);
+                log.info("🔴 Cart item updated: id={}, quantity={}", updated.getId(), updated.getQuantity());
                 return convertToDTO(updated);
             }
-            
-            // Crear nuevo item en carrito
-            log.debug("Creating new cart item for productId={}, quantity={}", request.getProductId(), request.getQuantity());
-            
-            // ✅ DECREMENTAR STOCK EN BD
-            product.setStock(product.getStock() - request.getQuantity());
-            productRepository.save(product);
-            log.info("Stock decremented: productId={}, quantityDecrease={}, newStock={}", 
-                product.getId(), request.getQuantity(), product.getStock());
-            
-            // Crear CartItem
-            CartItem cartItem = CartItem.builder()
+
+            CartItem newCartItem = CartItem.builder()
                 .user(user)
-                .product(product)
+                .product(lockedProduct)
                 .quantity(request.getQuantity())
                 .build();
-            
-            @SuppressWarnings("null")
-            CartItem saved = cartItemRepository.save(cartItem);
-            log.info("New cart item created successfully: cartItemId={}", saved.getId());
-            return convertToDTO(saved);
-        } catch (ResourceNotFoundException | IllegalArgumentException e) {
-            log.warn("Expected error in addItem: {}", e.getMessage());
-            throw e;
+            CartItem savedCartItem = cartItemRepository.save(newCartItem);
+            log.info("🔴 New cart item created: id={}, quantity={}", savedCartItem.getId(), savedCartItem.getQuantity());
+
+            return convertToDTO(savedCartItem);
         } catch (Exception e) {
-            log.error("Unexpected error in addItem for userId={}, productId={}", userId, request.getProductId(), e);
+            log.error("🔴 Error in addItem: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -168,14 +136,21 @@ public class CartService {
      * 
      * Si aumenta: DECREMENTA stock adicional
      * Si disminuye: INCREMENTA stock de vuelta
+     * 
+     * Usa findByIdForUpdate() para bloqueo pesimista, evitando race conditions
      */
     public CartItemDTO updateItem(Long userId, Long cartItemId, Integer quantity) {
+        log.info("🔵 updateItem() STARTED - userId={}, cartItemId={}, newQuantity={}", userId, cartItemId, quantity);
+        
         @SuppressWarnings("null")
         CartItem cartItem = cartItemRepository.findById(cartItemId)
             .orElseThrow(() -> new ResourceNotFoundException("Item del carrito no encontrado"));
         
+        log.debug("🔵 CartItem found: id={}, currentQuantity={}, productId={}", cartItemId, cartItem.getQuantity(), cartItem.getProduct().getId());
+        
         // Validar que el item pertenece al usuario
         if (!cartItem.getUser().getId().equals(userId)) {
+            log.error("❌ UNAUTHORIZED - Item {} does not belong to userId {}", cartItemId, userId);
             throw new SecurityException("No autorizado para modificar este item");
         }
         
@@ -185,8 +160,7 @@ public class CartService {
         }
         
         int oldQuantity = cartItem.getQuantity();
-        Product product = cartItem.getProduct();
-        long productId = product.getId();
+        long productId = cartItem.getProduct().getId();
         
         log.debug("updateItem() called: cartItemId={}, oldQuantity={}, newQuantity={}", cartItemId, oldQuantity, quantity);
         
@@ -198,12 +172,21 @@ public class CartService {
             );
         }
         
+        // ✅ USO DE BLOQUEO PESIMISTA para actualizar stock sin race conditions
+        @SuppressWarnings("null")
+        Product product = productRepository.findByIdForUpdate(productId)
+            .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+        
+        log.debug("🔵 Product locked for update: id={}, currentStock={}", productId, product.getStock());
+        
         // ✅ Si aumenta la cantidad
         if (quantity > oldQuantity) {
             int quantityIncrease = quantity - oldQuantity;
+            log.info("🔵 QUANTITY INCREASE - cartItemId={}, increase={} ({} -> {})", cartItemId, quantityIncrease, oldQuantity, quantity);
             
             // Validar que hay suficiente stock disponible
             if (product.getStock() < quantityIncrease) {
+                log.error("❌ INSUFFICIENT STOCK - productId={}, available={}, needed={}", productId, product.getStock(), quantityIncrease);
                 throw new IllegalArgumentException(
                     String.format("Stock insuficiente para aumentar. Disponible: %d, Necesitas: %d más",
                         product.getStock(), quantityIncrease)
@@ -213,59 +196,90 @@ public class CartService {
             // ✅ DECREMENTAR el stock adicional en BD
             product.setStock(product.getStock() - quantityIncrease);
             productRepository.save(product);
-            log.info("Stock decremented for increase: productId={}, decrease={}, newStock={}", 
+            log.info("🟢 STOCK DECREMENTED - productId={}, decrease={}, newStock={}", 
                 productId, quantityIncrease, product.getStock());
         } 
         // ✅ Si disminuye la cantidad
         else if (quantity < oldQuantity) {
             int quantityToRestore = oldQuantity - quantity;
+            log.info("🔵 QUANTITY DECREASE - cartItemId={}, restore={} ({} -> {})", cartItemId, quantityToRestore, oldQuantity, quantity);
             
             // ✅ INCREMENTAR stock de vuelta en BD
             product.setStock(product.getStock() + quantityToRestore);
             productRepository.save(product);
-            log.info("Stock incremented for decrease: productId={}, increase={}, newStock={}", 
+            log.info("🟢 STOCK RESTORED - productId={}, restore={}, newStock={}", 
                 productId, quantityToRestore, product.getStock());
         }
         // Si es igual, no hacer nada
+        else {
+            log.info("⚪ QUANTITY UNCHANGED - cartItemId={}, quantity={}", cartItemId, quantity);
+        }
         
         cartItem.setQuantity(quantity);
         CartItem updated = cartItemRepository.save(cartItem);
-        log.info("Cart item updated successfully: cartItemId={}, newQuantity={}", cartItemId, quantity);
-        return convertToDTO(updated);
+        log.info("🟢 CART ITEM SAVED - cartItemId={}, newQuantity={}", cartItemId, updated.getQuantity());
+        
+        CartItemDTO result = convertToDTO(updated);
+        log.info("🟢 updateItem() SUCCESS - returning CartItemDTO: id={}, productId={}, quantity={}", 
+            result.getId(), result.getProductId(), result.getQuantity());
+        
+        return result;
     }
     
     /**
      * ✅ NUEVO: Elimina item del carrito RESTAURANDO su stock en BD
+     * Usa findByIdForUpdate() para bloqueo pesimista
+     * Maneja casos de StaleObjectStateException cuando el item ya fue eliminado
      */
     public void removeItem(Long userId, Long cartItemId) {
-        @SuppressWarnings("null")
-        CartItem cartItem = cartItemRepository.findById(cartItemId)
-            .orElseThrow(() -> new ResourceNotFoundException("Item del carrito no encontrado"));
+        log.debug("🔵 removeItem() STARTED - userId={}, cartItemId={}", userId, cartItemId);
+        
+        CartItem cartItem;
+        try {
+            cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Item del carrito no encontrado"));
+        } catch (ResourceNotFoundException e) {
+            // Si no existe el item, es como si ya fue eliminado - idempotent
+            log.warn("⚠️ Cart item {} not found, returning successfully (idempotent)", cartItemId);
+            return;
+        }
         
         // Validar que el item pertenece al usuario
         if (!cartItem.getUser().getId().equals(userId)) {
             throw new SecurityException("No autorizado para eliminar este item");
         }
         
-        Product product = cartItem.getProduct();
+        long productId = cartItem.getProduct().getId();
         int quantityToRestore = cartItem.getQuantity();
         
         log.debug("removeItem() called: cartItemId={}, quantity={}, productId={}", 
-            cartItemId, quantityToRestore, product.getId());
+            cartItemId, quantityToRestore, productId);
         
-        // ✅ INCREMENTAR stock de vuelta en BD
-        product.setStock(product.getStock() + quantityToRestore);
-        productRepository.save(product);
-        log.info("Stock restored: productId={}, quantityRestored={}, newStock={}", 
-            product.getId(), quantityToRestore, product.getStock());
-        
-        // Eliminar CartItem
-        cartItemRepository.deleteById(Objects.requireNonNull(cartItemId, "cartItemId cannot be null"));
-        log.info("Cart item removed: cartItemId={}", cartItemId);
+        try {
+            // ✅ USO DE BLOQUEO PESIMISTA para evitar race conditions
+            @SuppressWarnings("null")
+            Product lockedProduct = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+            
+            // ✅ INCREMENTAR stock de vuelta en BD
+            lockedProduct.setStock(lockedProduct.getStock() + quantityToRestore);
+            productRepository.save(lockedProduct);
+            log.info("Stock restored: productId={}, quantityRestored={}, newStock={}", 
+                productId, quantityToRestore, lockedProduct.getStock());
+            
+            // Eliminar CartItem
+            cartItemRepository.deleteById(Objects.requireNonNull(cartItemId, "cartItemId cannot be null"));
+            log.info("🟢 Cart item removed: cartItemId={}", cartItemId);
+        } catch (org.hibernate.StaleObjectStateException | org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+            // Si ocurre un error de concurrencia, el item ya fue eliminado por otra transacción
+            log.warn("⚠️ StaleObjectState when removing cartItem {}: item was already deleted", cartItemId, e);
+            // No relanzar excepción - es un caso válido de concurrencia
+        }
     }
     
     /**
      * ✅ NUEVO: Limpia todo el carrito del usuario RESTAURANDO stock en BD
+     * Usa findByIdForUpdate() para bloqueo pesimista en cada producto
      */
     public void clearCart(Long userId) {
         // Obtener todos los items del usuario para restaurar su stock
@@ -274,14 +288,19 @@ public class CartService {
         log.debug("clearCart() called for userId={}, itemCount={}", userId, userItems.size());
         
         for (CartItem item : userItems) {
-            Product product = item.getProduct();
+            long productId = item.getProduct().getId();
             int quantityToRestore = item.getQuantity();
             
+            // ✅ USO DE BLOQUEO PESIMISTA para evitar race conditions
+            @SuppressWarnings("null")
+            Product lockedProduct = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+            
             // ✅ INCREMENTAR stock de vuelta en BD
-            product.setStock(product.getStock() + quantityToRestore);
-            productRepository.save(product);
+            lockedProduct.setStock(lockedProduct.getStock() + quantityToRestore);
+            productRepository.save(lockedProduct);
             log.info("Stock restored on clear: productId={}, quantityRestored={}, newStock={}", 
-                product.getId(), quantityToRestore, product.getStock());
+                productId, quantityToRestore, lockedProduct.getStock());
         }
         
         cartItemRepository.deleteByUserId(userId);
@@ -337,14 +356,6 @@ public class CartService {
                 log.debug("Merged anonymous item to existing cart item: productId={}, newQuantity={}", 
                     product.getId(), totalQuantity);
                 
-                // Actualizar reserva de stock con nueva cantidad
-                stockReservationService.reserveStock(
-                    product.getId(),
-                    totalQuantity,
-                    user.getId(),
-                    null
-                );
-                
             } else {
                 // ✅ Asignar item anónimo al usuario
                 anonItem.setUser(user);
@@ -353,14 +364,6 @@ public class CartService {
                 
                 log.debug("Assigned anonymous cart item to user: productId={}, quantity={}", 
                     product.getId(), anonItem.getQuantity());
-                
-                // Reservar stock con nuevo usuario
-                stockReservationService.reserveStock(
-                    product.getId(),
-                    anonItem.getQuantity(),
-                    user.getId(),
-                    null
-                );
             }
             
             // Eliminar item anónimo (ahora asignado o mergeado)

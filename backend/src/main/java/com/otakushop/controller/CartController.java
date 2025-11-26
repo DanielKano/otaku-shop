@@ -93,8 +93,13 @@ public class CartController {
             @PathVariable Long id,
             @Valid @RequestBody CartItemUpdateRequest request) {
         try {
+            log.info("🔵 PUT /api/cart/{} RECEIVED - request body: {}", id, request);
             Long userId = securityUtil.getCurrentUserId();
+            log.info("🔵 User ID extracted: {}, CartItemId: {}, NewQuantity: {}", userId, id, request.getQuantity());
+            
             CartItemDTO cartItem = cartService.updateItem(userId, id, request.getQuantity());
+            log.info("🟢 updateItem() SUCCESS - CartItem updated: id={}, quantity={}", id, cartItem.getQuantity());
+            
             BigDecimal total = cartService.getCartTotal(userId);
             Long itemCount = cartService.getCartItemCount(userId);
             
@@ -104,9 +109,10 @@ public class CartController {
             response.put("itemCount", itemCount);
             response.put("message", "Cantidad actualizada exitosamente");
             
+            log.info("🟢 PUT /api/cart/{} COMPLETED - Response: cartItem.quantity={}", id, cartItem.getQuantity());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error updating cart item", e);
+            log.error("❌ Error updating cart item with id={}", id, e);
             throw e;
         }
     }
@@ -119,6 +125,8 @@ public class CartController {
     public ResponseEntity<Map<String, Object>> removeFromCart(@PathVariable Long id) {
         try {
             Long userId = securityUtil.getCurrentUserId();
+            log.debug("🔵 DELETE /api/cart/{} - userId={}", id, userId);
+            
             cartService.removeItem(userId, id);
             
             BigDecimal total = cartService.getCartTotal(userId);
@@ -129,9 +137,22 @@ public class CartController {
             response.put("itemCount", itemCount);
             response.put("message", "Item eliminado del carrito exitosamente");
             
+            log.debug("🟢 DELETE /api/cart/{} - SUCCESS", id);
+            return ResponseEntity.ok(response);
+        } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+            // Item ya fue eliminado por otra transacción, responder con 200 OK (idempotent)
+            log.warn("⚠️ Item {} ya fue eliminado previamente (StaleObjectState)", id);
+            Long userId = securityUtil.getCurrentUserId();
+            BigDecimal total = cartService.getCartTotal(userId);
+            Long itemCount = cartService.getCartItemCount(userId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("total", total);
+            response.put("itemCount", itemCount);
+            response.put("message", "Item ya había sido eliminado del carrito");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error removing from cart", e);
+            log.error("❌ Error removing from cart with id={}", id, e);
             throw e;
         }
     }

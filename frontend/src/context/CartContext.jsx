@@ -1,7 +1,7 @@
 import { createContext, useState, useCallback, useContext, useEffect } from 'react'
 import { NotificationContext } from './NotificationContext'
 import { AuthContext } from './AuthContext'
-import stockReservationService from '../services/stockReservationService'
+
 import api from '../services/api'
 
 export const CartContext = createContext()
@@ -14,7 +14,11 @@ export const CartProvider = ({ children }) => {
   const [items, setItems] = useState([])
   const [syncedWithBackend, setSyncedWithBackend] = useState(false)
   const { addNotification } = useContext(NotificationContext) || { addNotification: () => {} }
-  const { user } = useContext(AuthContext) || {}
+  const { user, isLoading: authLoading } = useContext(AuthContext) || { user: null, isLoading: true }
+  
+  useEffect(() => {
+    console.debug('[CartContext] Auth state changed:', { user: user ? { id: user.id, name: user.name } : null, authLoading })
+  }, [user, authLoading])
 
   /**
    * 🔄 Cargar carrito desde localStorage al inicializar
@@ -55,8 +59,17 @@ export const CartProvider = ({ children }) => {
       // Obtener carrito actual del backend
       const response = await api.get('/cart')
       if (response.data?.items) {
-        setItems(response.data.items)
-        saveCartToStorage(response.data.items)
+        // ✅ CRITICAL: Map backend CartItemDTO to frontend structure
+        // Backend returns: { id, productId, productName, productPrice, productImage, quantity, ... }
+        // Frontend needs: { id (as cartItemId), productId, productName, productPrice, productImage, quantity, ... }
+        const mappedItems = response.data.items.map(item => ({
+          ...item,
+          cartItemId: item.id, // ✅ Store backend ID as cartItemId for PUT/DELETE operations
+          id: item.productId, // ✅ Use productId as local id for React keys
+        }))
+        console.debug('[CartContext] syncCartWithBackend mapped items:', mappedItems)
+        setItems(mappedItems)
+        saveCartToStorage(mappedItems)
         setSyncedWithBackend(true)
       }
     } catch (error) {
@@ -70,11 +83,14 @@ export const CartProvider = ({ children }) => {
    * 📥 Cargar carrito al inicializar o cuando el usuario cambia
    */
   useEffect(() => {
+    console.debug('[CartContext] useEffect: user?.id =', user?.id)
     if (user?.id) {
       // Si hay usuario autenticado, sincronizar con backend
+      console.debug('[CartContext] Syncing cart with backend for user', user.id)
       syncCartWithBackend()
     } else {
       // Si no hay usuario, cargar desde localStorage
+      console.debug('[CartContext] Loading cart from localStorage (no user)')
       loadCartFromStorage()
     }
   }, [user?.id, syncCartWithBackend, loadCartFromStorage])
@@ -84,9 +100,7 @@ export const CartProvider = ({ children }) => {
    */
   const validateAddQuantity = (product, newQuantity, existingQuantity = 0) => {
     const totalQuantity = existingQuantity + newQuantity
-    const totalStock = product.stock || 0
-    const reserved = stockReservationService.getReservedQuantity(product.id)
-    const availableStock = totalStock - reserved
+    const productStock = product.stock || 0
 
     // Validación 1: No exceder 10 unidades por producto
     if (totalQuantity > MAX_UNITS_PER_PRODUCT) {
@@ -98,10 +112,10 @@ export const CartProvider = ({ children }) => {
     }
 
     // Validación 2: Verificar stock disponible
-    if (newQuantity > availableStock) {
+    if (newQuantity > productStock) {
       return {
         valid: false,
-        error: 'No hay suficiente stock disponible en este momento.',
+        error: `No hay suficiente stock disponible (disponible: ${productStock})`,
         type: 'error'
       }
     }
@@ -109,7 +123,7 @@ export const CartProvider = ({ children }) => {
     return { valid: true }
   }
 
-  const addItem = useCallback(async (product, quantity = 1) => {
+  const addItem = useCallback((product, quantity = 1) => {
     setItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id)
       const existingQuantity = existingItem?.quantity || 0
@@ -126,55 +140,39 @@ export const CartProvider = ({ children }) => {
       }
 
       const newQuantity = existingQuantity + quantity
-
+      
       if (existingItem) {
         // Actualizar reserva existente
-        stockReservationService.updateReservation(product.id, newQuantity)
-        
-        // Si hay usuario, sincronizar con backend usando cartItemId
-        if (user?.id && existingItem.cartItemId) {
-          api.put(`/cart/${existingItem.cartItemId}`, { quantity: newQuantity }).catch(error => {
-            console.warn('Error updating cart in backend:', error)
-          })
-        }
-        
         addNotification?.({
-          message: `✅ ${product.name} - Cantidad: ${newQuantity} unidades. Reservado durante ${RESERVATION_DURATION_DAYS} días. Completa la compra para asegurar tu unidad.`,
+          message: `✅ ${product.name} - Cantidad: ${newQuantity} unidades.`,
           type: 'success'
         })
 
         const updatedItems = prevItems.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: newQuantity, reservedAt: item.reservedAt || new Date(), stock: product.stock }
+            ? { ...item, quantity: newQuantity, productStock: product.stock }
             : item,
         )
         saveCartToStorage(updatedItems)
         return updatedItems
       }
 
-      // Crear nueva reserva
-      stockReservationService.reserveStock(product.id, newQuantity)
-      
-      // Si hay usuario, agregar al carrito en el backend
-      if (user?.id) {
-        api.post('/cart/add', {
-          productId: product.id,
-          quantity: newQuantity
-        }).catch(error => {
-          console.warn('Error adding item to backend cart:', error)
-        })
-      }
-      
       addNotification?.({
-        message: `✅ Producto reservado durante ${RESERVATION_DURATION_DAYS} días. Completa la compra para asegurar tu unidad.`,
+        message: `✅ Producto reservado durante ${RESERVATION_DURATION_DAYS} días.`,
         type: 'success'
       })
 
       const newItems = [
         ...prevItems,
         {
-          ...product,
-          quantity: newQuantity,
+          id: product.id,
+          productId: product.id,
+          productName: product.name,
+          productPrice: product.price,
+          productImage: product.imageUrl || product.image,
+          productStock: product.stock,
+          category: product.category,
+          quantity: quantity, // ← Guardar solo la cantidad nueva, no la total
           reservedAt: new Date(),
           expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
         }
@@ -182,32 +180,58 @@ export const CartProvider = ({ children }) => {
       saveCartToStorage(newItems)
       return newItems
     })
-  }, [addNotification, user?.id, validateAddQuantity, saveCartToStorage])
+
+    // ✅ CORREGIDO: Enviar solo la cantidad INCREMENTAL al backend
+    if (user?.id) {
+      setTimeout(() => {
+        console.debug('[CartContext] calling POST /cart/add with INCREMENTAL quantity:', quantity)
+        api.post('/cart/add', {
+          productId: product.id,
+          quantity: quantity  // ← Solo la cantidad a AGREGAR, no la total
+        }).then(res => {
+          console.debug('[CartContext] POST /cart/add success, syncing cart with backend')
+          syncCartWithBackend()
+        }).catch(error => {
+          console.warn('[CartContext] Error adding item to backend cart:', error)
+          syncCartWithBackend()
+        })
+      }, 100)
+    }
+  }, [addNotification, user?.id, validateAddQuantity, saveCartToStorage, syncCartWithBackend])
 
   const removeItem = useCallback((productId) => {
     setItems((prevItems) => {
       const item = prevItems.find((i) => i.id === productId)
 
       if (item) {
-        // Liberar la reserva
-        stockReservationService.releaseReservation(productId)
-        
-        // Si hay usuario, eliminar del carrito en el backend usando cartItemId
-        if (user?.id && item.cartItemId) {
-          api.delete(`/cart/${item.cartItemId}`).catch(error => {
-            console.warn('Error removing item from backend cart:', error)
-          })
-        }        addNotification?.({
+        addNotification?.({
           message: `Producto eliminado del carrito. La reserva fue liberada y el stock volvió al inventario.`,
           type: 'info'
         })
+
+        // ✅ Llamar al backend de forma asíncrona DESPUÉS de actualizar estado local
+        if (user?.id && item.cartItemId) {
+          setTimeout(() => {
+            console.debug('[CartContext] calling DELETE /cart/' + item.cartItemId)
+            api.delete(`/cart/${item.cartItemId}`)
+              .then(res => {
+                console.debug('[CartContext] DELETE /cart response', res?.data)
+              })
+              .catch(error => {
+                console.warn('Error removing item from backend cart:', error?.response?.data?.message || error.message)
+                // Recargar el carrito si falla la eliminación
+                syncCartWithBackend()
+              })
+          }, 50)
+        }
       }
 
+      // Filtrar el item del estado local INMEDIATAMENTE
       const updatedItems = prevItems.filter((item) => item.id !== productId)
       saveCartToStorage(updatedItems)
       return updatedItems
     })
-  }, [addNotification, user?.id, saveCartToStorage])
+  }, [addNotification, user?.id, saveCartToStorage, syncCartWithBackend])
 
   /**
    * 🔄 Actualizar cantidad con validaciones de cambio
@@ -218,85 +242,116 @@ export const CartProvider = ({ children }) => {
       return
     }
 
-    setItems((prevItems) => {
-      const item = prevItems.find((i) => i.id === productId)
-      if (!item) return prevItems
+    // ✅ Obtener el item ANTES de actualizar
+    const currentItem = items.find((i) => i.id === productId)
+    if (!currentItem) {
+      console.warn('[CartContext] Item not found:', productId)
+      return
+    }
 
-      const oldQuantity = item.quantity
-      const quantityDifference = newQuantity - oldQuantity
+    const oldQuantity = currentItem.quantity
+    const quantityDifference = newQuantity - oldQuantity
 
-      // Validar nueva cantidad
-      if (newQuantity > MAX_UNITS_PER_PRODUCT) {
+    // Validar nueva cantidad
+    if (newQuantity > MAX_UNITS_PER_PRODUCT) {
+      addNotification?.({
+        message: `No puedes reservar más de ${MAX_UNITS_PER_PRODUCT} unidades.`,
+        type: 'warning'
+      })
+      return
+    }
+
+    // Validar si hay stock disponible para el aumento
+    if (quantityDifference > 0) {
+      const productStock = currentItem.productStock || currentItem.stock || 0
+
+      console.debug('[CartContext] updateQuantity increase check', {
+        productId,
+        oldQuantity,
+        newQuantity,
+        quantityDifference,
+        productStock,
+      })
+
+      if (newQuantity > productStock) {
+        const msg = `No hay suficiente stock. Disponible: ${productStock}, solicitado: ${newQuantity}`
+        console.warn('[CartContext] ' + msg)
         addNotification?.({
-          message: `No puedes reservar más de ${MAX_UNITS_PER_PRODUCT} unidades.`,
-          type: 'warning'
+          message: msg,
+          type: 'error'
         })
-        return prevItems
+        return
       }
+    }
 
-      // Validar si hay stock disponible para el aumento
-      if (quantityDifference > 0) {
-        const reserved = stockReservationService.getReservedQuantity(productId)
-        const totalStock = item.stock || 0
-        const availableStock = totalStock - reserved
+    // ✅ Mostrar notificación apropiada
+    if (quantityDifference > 0) {
+      addNotification?.({
+        message: `✅ Cantidad actualizada a ${newQuantity} unidades.`,
+        type: 'success'
+      })
+    } else if (quantityDifference < 0) {
+      addNotification?.({
+        message: `Cantidad reducida. La reserva liberada vuelve al inventario.`,
+        type: 'info'
+      })
+    }
 
-        if (quantityDifference > availableStock) {
+    // ✅ Si hay usuario, llamar al backend PRIMERO
+    if (user?.id && currentItem.cartItemId) {
+      console.debug('[CartContext] calling PUT /cart/' + currentItem.cartItemId, { quantity: newQuantity })
+
+      api
+        .put(`/cart/${currentItem.cartItemId}`, { quantity: newQuantity })
+        .then((res) => {
+          console.debug('[CartContext] PUT /cart response:', res?.data?.cartItem)
+
+          // ✅ Actualizar SOLO desde la respuesta del servidor
+          if (res?.data?.cartItem) {
+            setItems((current) => {
+              const updatedItems = current.map((i) =>
+                i.cartItemId === currentItem.cartItemId
+                  ? {
+                      ...i,
+                      quantity: res.data.cartItem.quantity,
+                      productStock: res.data.cartItem.productStock,
+                    }
+                  : i
+              )
+              saveCartToStorage(updatedItems)
+              return updatedItems
+            })
+          }
+        })
+        .catch((error) => {
+          console.error('[CartContext] Error updating cart in backend:', error?.response?.data?.message || error.message)
+
+          // ✅ Si falla, recargar carrito del backend para sincronizar
           addNotification?.({
-            message: `No hay suficiente stock para aumentar la cantidad.`,
+            message: 'Error al actualizar. Recargando carrito...',
             type: 'error'
           })
-          return prevItems
-        }
-
-        // Actualizar reserva con nueva cantidad
-        stockReservationService.updateReservation(productId, newQuantity)
-        
-        // Si hay usuario, sincronizar con backend usando cartItemId
-        if (user?.id && item.cartItemId) {
-          api.put(`/cart/${item.cartItemId}`, { quantity: newQuantity }).catch(error => {
-            console.warn('Error updating cart in backend:', error)
-          })
-        }
-
-        addNotification?.({
-          message: `Cantidad actualizada y reserva ampliada. Nueva cantidad: ${newQuantity} unidades.`,
-          type: 'success'
+          syncCartWithBackend()
         })
-      } else if (quantityDifference < 0) {
-        // Si la cantidad disminuye, liberar stock de la reserva
-        stockReservationService.updateReservation(productId, newQuantity)
-        
-        // Si hay usuario, sincronizar con backend usando cartItemId
-        if (user?.id && item.cartItemId) {
-          api.put(`/cart/${item.cartItemId}`, { quantity: newQuantity }).catch(error => {
-            console.warn('Error updating cart in backend:', error)
-          })
-        }
-
-        addNotification?.({
-          message: `Cantidad reducida. La reserva liberada vuelve al inventario.`,
-          type: 'info'
-        })
-      }
-
-      const updatedItems = prevItems.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
-      saveCartToStorage(updatedItems)
-      return updatedItems
-    })
-  }, [removeItem, addNotification, user?.id, saveCartToStorage])
+    } else {
+      // ✅ Si NO hay usuario, actualizar SOLO localmente
+      setItems((prevItems) => {
+        const updatedItems = prevItems.map((item) =>
+          item.id === productId ? { ...item, quantity: newQuantity } : item
+        )
+        saveCartToStorage(updatedItems)
+        return updatedItems
+      })
+    }
+  }, [items, removeItem, addNotification, user?.id, saveCartToStorage, syncCartWithBackend])
 
   const clearCart = useCallback(async () => {
-    // Liberar todas las reservas
-    items.forEach((item) => {
-      stockReservationService.releaseReservation(item.id)
-    })
-    
     // Si hay usuario, limpiar el carrito en el backend
     if (user?.id) {
       try {
-        await api.delete('/cart/clear')
+        console.debug('[CartContext] calling DELETE /cart (clear)')
+        await api.delete('/cart')
+        console.debug('[CartContext] DELETE /cart response (clear)')
       } catch (error) {
         console.warn('Error clearing backend cart:', error)
       }
@@ -311,17 +366,15 @@ export const CartProvider = ({ children }) => {
    */
   const validateCheckout = () => {
     const validationResults = items.map((item) => {
-      const reserved = stockReservationService.getReservedQuantity(item.id)
-      const totalStock = item.stock || 0
-      const hasEnoughStock = reserved >= item.quantity && item.quantity <= totalStock
+      const totalStock = item.productStock || item.stock || 0
+      const hasEnoughStock = item.quantity <= totalStock
 
       return {
         id: item.id,
         name: item.name,
         hasEnoughStock,
-        reserved,
         requested: item.quantity,
-        available: totalStock - reserved
+        available: totalStock
       }
     })
 
@@ -350,7 +403,10 @@ export const CartProvider = ({ children }) => {
     }
   }
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const total = items.reduce((sum, item) => {
+    const price = item.productPrice || item.price || 0
+    return sum + (price * item.quantity)
+  }, 0)
 
   const value = {
     items,

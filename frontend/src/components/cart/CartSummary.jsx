@@ -1,7 +1,9 @@
 import Button from '../ui/Button'
 
 const CartSummary = ({ items = [], onCheckout, loading = false }) => {
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  // ✅ FIXED: Use item.productPrice instead of item.price
+  // Backend CartItemDTO sends: productPrice, not price
+  const subtotal = items.reduce((sum, item) => sum + (item.productPrice || 0) * item.quantity, 0)
   const ivaRate = 0.16
   const iva = subtotal * ivaRate
   const total = subtotal + iva
