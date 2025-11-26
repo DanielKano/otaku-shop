@@ -91,11 +91,11 @@ const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
         </div>
 
         {/* Rating */}
-        {product.rating && (
+        {product.rating && product.rating > 0 && (
           <div className="flex items-center gap-1 mb-4">
             <span className="text-yellow-500">★</span>
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {product.rating} ({product.reviews || 0})
+              {product.rating.toFixed(1)} ({product.reviews || 0})
             </span>
           </div>
         )}

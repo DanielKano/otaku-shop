@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,6 +70,7 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
         
         product.setStatus(com.otakushop.entity.ProductStatus.APPROVED);
+        product.setActive(true); // ✅ Asegurarse que sea visible
         product.setApprovedAt(java.time.LocalDateTime.now());
         product.setApprovedBy(admin);
         Product savedProduct = productRepository.save(product);
@@ -126,7 +129,7 @@ public class ProductService {
      */
     public List<ProductDTO> filterApprovedProducts(String search, String category, BigDecimal minPrice, BigDecimal maxPrice) {
         return productRepository.findAll().stream()
-                .filter(p -> "APPROVED".equals(p.getStatus()) && (p.getActive() != null && p.getActive()))
+                .filter(p -> ProductStatus.APPROVED.equals(p.getStatus()) && (p.getActive() != null && p.getActive()))
                 .filter(p -> search == null || search.isEmpty() || 
                            p.getName().toLowerCase().contains(search.toLowerCase()) ||
                            (p.getDescription() != null && p.getDescription().toLowerCase().contains(search.toLowerCase())))
@@ -135,6 +138,30 @@ public class ProductService {
                 .filter(p -> maxPrice == null || p.getPrice().compareTo(maxPrice) <= 0)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * FIX: Setear active=true para todos los productos aprobados que estén NULL o false
+     */
+    @Transactional
+    public Map<String, Object> fixApprovedProductsActive() {
+        List<Product> productsToFix = productRepository.findAll().stream()
+                .filter(p -> ProductStatus.APPROVED.equals(p.getStatus()) && (p.getActive() == null || !p.getActive()))
+                .collect(Collectors.toList());
+        
+        for (Product product : productsToFix) {
+            product.setActive(true);
+            productRepository.save(product);
+            log.info("FIXED: Product {} (ID: {}) - Set active=true", product.getName(), product.getId());
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("message", "Productos aprobados corregidos");
+        result.put("productsFixed", productsToFix.size());
+        result.put("details", productsToFix.stream()
+                .map(p -> Map.of("id", p.getId(), "name", p.getName(), "status", p.getStatus().toString()))
+                .collect(Collectors.toList()));
+        return result;
     }
 
     @Transactional

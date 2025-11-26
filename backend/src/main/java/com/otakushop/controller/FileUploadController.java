@@ -17,7 +17,28 @@ import java.nio.file.Paths;
 @CrossOrigin(origins = "http://localhost:5173")
 public class FileUploadController {
 
-    private static final String DEFAULT_UPLOAD_PATH = System.getProperty("user.dir") + "/uploads/images";
+    /**
+     * Construye la ruta de uploads considerando que el JAR se ejecuta desde backend/target/
+     * Necesitamos ir al directorio padre (proyecto raíz) y luego a uploads/images
+     */
+    private String getUploadPath() {
+        String userDir = System.getProperty("user.dir");
+        Path uploadsPath = Paths.get(userDir)
+                .getParent()
+                .resolve("uploads")
+                .resolve("images")
+                .toAbsolutePath();
+        
+        // Fallback si no existe (cuando se ejecuta desde otro directorio)
+        if (!java.nio.file.Files.exists(uploadsPath)) {
+            uploadsPath = Paths.get(userDir)
+                    .resolve("uploads")
+                    .resolve("images")
+                    .toAbsolutePath();
+        }
+        
+        return uploadsPath.toString();
+    }
 
     /**
      * Obtiene una imagen subida por su nombre
@@ -25,7 +46,8 @@ public class FileUploadController {
     @GetMapping("/images/{fileName}")
     public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
         try {
-            Path filePath = Paths.get(DEFAULT_UPLOAD_PATH).resolve(fileName).normalize();
+            String uploadPath = getUploadPath();
+            Path filePath = Paths.get(uploadPath).resolve(fileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
             
             if (resource.exists() && resource.isReadable()) {

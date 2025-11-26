@@ -19,8 +19,13 @@ import java.util.UUID;
 @Slf4j
 public class FileUploadService {
 
-    // Usar ruta absoluta como fallback
-    private static final String DEFAULT_UPLOAD_PATH = System.getProperty("user.dir") + "/uploads/images";
+    // Usar ruta absoluta como fallback - ../uploads/images relativo a backend
+    private static final String DEFAULT_UPLOAD_PATH = 
+        Paths.get(System.getProperty("user.dir"))
+             .getParent()
+             .resolve("uploads/images")
+             .toAbsolutePath()
+             .toString();
 
     private static final Set<String> ALLOWED_EXTENSIONS = new HashSet<>(Arrays.asList(
         "jpg", "jpeg", "png", "webp", "gif", "bmp"

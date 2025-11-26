@@ -101,53 +101,54 @@ public class CartService {
                 );
             }
             
-            // ✅ VALIDACIÓN 2: Validar stock disponible (considerando otras reservas)
-            log.debug("Checking stock availability: productId={}, quantity={}, stock={}", 
+            // ✅ VALIDACIÓN 2: Validar que hay STOCK DISPONIBLE
+            log.debug("Checking stock availability: productId={}, quantity={}, currentStock={}", 
                 request.getProductId(), request.getQuantity(), product.getStock());
-                
-            if (!stockReservationService.isStockAvailable(request.getProductId(), request.getQuantity(), product.getStock())) {
-                Integer available = stockReservationService.getAvailableStock(request.getProductId(), product.getStock());
-                log.error("Stock insufficient: available={}, requested={}", available, request.getQuantity());
+            
+            if (product.getStock() < request.getQuantity()) {
+                log.error("Stock insufficient: available={}, requested={}", product.getStock(), request.getQuantity());
                 throw new IllegalArgumentException(
                     String.format("Stock insuficiente. Disponible: %d, Solicitado: %d",
-                        available, request.getQuantity())
+                        product.getStock(), request.getQuantity())
                 );
             }
             
             if (existingCartItem != null) {
-                log.debug("Updating existing cart item: id={}, newQuantity={}", existingCartItem.getId(), newTotalQuantity);
+                // El usuario ya tiene este producto en el carrito
+                log.debug("Updating existing cart item: id={}, oldQuantity={}, newQuantity={}", 
+                    existingCartItem.getId(), currentQuantity, newTotalQuantity);
+                
+                // Solo necesitamos decrementar la DIFERENCIA de stock
+                int quantityIncrease = request.getQuantity();
+                
+                // ✅ DECREMENTAR STOCK EN BD
+                product.setStock(product.getStock() - quantityIncrease);
+                productRepository.save(product);
+                log.info("Stock decremented: productId={}, quantityDecrease={}, newStock={}", 
+                    product.getId(), quantityIncrease, product.getStock());
+                
+                // Actualizar cantidad en carrito
                 existingCartItem.setQuantity(newTotalQuantity);
-                
-                // ✅ Crear/actualizar reserva de stock
-                log.debug("Reserving stock for existing item");
-                stockReservationService.reserveStock(
-                    request.getProductId(),
-                    newTotalQuantity,
-                    userId,
-                    null
-                );
-                
                 CartItem updated = cartItemRepository.save(existingCartItem);
-                log.info("Cart item updated successfully: cartItemId={}", updated.getId());
+                log.info("Cart item updated successfully: cartItemId={}, newQuantity={}", updated.getId(), newTotalQuantity);
                 return convertToDTO(updated);
             }
             
-            // Crear nuevo item
-            log.debug("Creating new cart item for productId={}", request.getProductId());
+            // Crear nuevo item en carrito
+            log.debug("Creating new cart item for productId={}, quantity={}", request.getProductId(), request.getQuantity());
+            
+            // ✅ DECREMENTAR STOCK EN BD
+            product.setStock(product.getStock() - request.getQuantity());
+            productRepository.save(product);
+            log.info("Stock decremented: productId={}, quantityDecrease={}, newStock={}", 
+                product.getId(), request.getQuantity(), product.getStock());
+            
+            // Crear CartItem
             CartItem cartItem = CartItem.builder()
                 .user(user)
                 .product(product)
                 .quantity(request.getQuantity())
                 .build();
-            
-            // ✅ Crear reserva de stock
-            log.debug("Reserving stock for new item");
-            stockReservationService.reserveStock(
-                request.getProductId(),
-                request.getQuantity(),
-                userId,
-                null
-            );
             
             @SuppressWarnings("null")
             CartItem saved = cartItemRepository.save(cartItem);
@@ -163,7 +164,10 @@ public class CartService {
     }
     
     /**
-     * Actualiza la cantidad de un item en el carrito con validaciones de reserva
+     * ✅ NUEVO: Actualiza cantidad en carrito AJUSTANDO el stock en BD
+     * 
+     * Si aumenta: DECREMENTA stock adicional
+     * Si disminuye: INCREMENTA stock de vuelta
      */
     public CartItemDTO updateItem(Long userId, Long cartItemId, Integer quantity) {
         @SuppressWarnings("null")
@@ -181,49 +185,57 @@ public class CartService {
         }
         
         int oldQuantity = cartItem.getQuantity();
-        long productId = cartItem.getProduct().getId();
-        int stockAvailable = cartItem.getProduct().getStock();
+        Product product = cartItem.getProduct();
+        long productId = product.getId();
+        
+        log.debug("updateItem() called: cartItemId={}, oldQuantity={}, newQuantity={}", cartItemId, oldQuantity, quantity);
         
         // ✅ VALIDACIÓN 1: Máximo 10 unidades por usuario
         if (quantity > MAX_UNITS_PER_USER) {
             throw new IllegalArgumentException(
-                String.format("Solo puedes reservar hasta %d unidades por producto. Intentas: %d",
+                String.format("Solo puedes comprar hasta %d unidades por producto. Intentas: %d",
                     MAX_UNITS_PER_USER, quantity)
             );
         }
         
-        // ✅ VALIDACIÓN 2: Si aumentamos cantidad, validar stock y reservas
+        // ✅ Si aumenta la cantidad
         if (quantity > oldQuantity) {
             int quantityIncrease = quantity - oldQuantity;
             
-            if (!stockReservationService.isStockAvailable(productId, quantityIncrease, stockAvailable)) {
-                Integer available = stockReservationService.getAvailableStock(productId, stockAvailable);
+            // Validar que hay suficiente stock disponible
+            if (product.getStock() < quantityIncrease) {
                 throw new IllegalArgumentException(
                     String.format("Stock insuficiente para aumentar. Disponible: %d, Necesitas: %d más",
-                        available, quantityIncrease)
+                        product.getStock(), quantityIncrease)
                 );
             }
             
-            // ✅ Actualizar reserva a nueva cantidad
-            stockReservationService.reserveStock(
-                productId,
-                quantity,
-                userId,
-                null
-            );
-        } else if (quantity < oldQuantity) {
-            // ✅ Si disminuimos, reducir la reserva
-            int quantityToReduce = oldQuantity - quantity;
-            stockReservationService.reduceUserReservation(productId, userId, quantityToReduce);
+            // ✅ DECREMENTAR el stock adicional en BD
+            product.setStock(product.getStock() - quantityIncrease);
+            productRepository.save(product);
+            log.info("Stock decremented for increase: productId={}, decrease={}, newStock={}", 
+                productId, quantityIncrease, product.getStock());
+        } 
+        // ✅ Si disminuye la cantidad
+        else if (quantity < oldQuantity) {
+            int quantityToRestore = oldQuantity - quantity;
+            
+            // ✅ INCREMENTAR stock de vuelta en BD
+            product.setStock(product.getStock() + quantityToRestore);
+            productRepository.save(product);
+            log.info("Stock incremented for decrease: productId={}, increase={}, newStock={}", 
+                productId, quantityToRestore, product.getStock());
         }
+        // Si es igual, no hacer nada
         
         cartItem.setQuantity(quantity);
         CartItem updated = cartItemRepository.save(cartItem);
+        log.info("Cart item updated successfully: cartItemId={}, newQuantity={}", cartItemId, quantity);
         return convertToDTO(updated);
     }
     
     /**
-     * Elimina un item del carrito y libera su reserva de stock
+     * ✅ NUEVO: Elimina item del carrito RESTAURANDO su stock en BD
      */
     public void removeItem(Long userId, Long cartItemId) {
         @SuppressWarnings("null")
@@ -235,33 +247,45 @@ public class CartService {
             throw new SecurityException("No autorizado para eliminar este item");
         }
         
-        // ✅ Liberar la reserva de stock
-        stockReservationService.reduceUserReservation(
-            cartItem.getProduct().getId(),
-            userId,
-            cartItem.getQuantity()
-        );
+        Product product = cartItem.getProduct();
+        int quantityToRestore = cartItem.getQuantity();
         
+        log.debug("removeItem() called: cartItemId={}, quantity={}, productId={}", 
+            cartItemId, quantityToRestore, product.getId());
+        
+        // ✅ INCREMENTAR stock de vuelta en BD
+        product.setStock(product.getStock() + quantityToRestore);
+        productRepository.save(product);
+        log.info("Stock restored: productId={}, quantityRestored={}, newStock={}", 
+            product.getId(), quantityToRestore, product.getStock());
+        
+        // Eliminar CartItem
         cartItemRepository.deleteById(Objects.requireNonNull(cartItemId, "cartItemId cannot be null"));
+        log.info("Cart item removed: cartItemId={}", cartItemId);
     }
     
     /**
-     * Limpia todo el carrito del usuario y libera todas sus reservas de stock
+     * ✅ NUEVO: Limpia todo el carrito del usuario RESTAURANDO stock en BD
      */
     public void clearCart(Long userId) {
-        // Obtener todos los items del usuario para liberar sus reservas
+        // Obtener todos los items del usuario para restaurar su stock
         List<CartItem> userItems = cartItemRepository.findByUserId(userId);
         
+        log.debug("clearCart() called for userId={}, itemCount={}", userId, userItems.size());
+        
         for (CartItem item : userItems) {
-            // ✅ Liberar cada reserva de stock
-            stockReservationService.reduceUserReservation(
-                item.getProduct().getId(),
-                userId,
-                item.getQuantity()
-            );
+            Product product = item.getProduct();
+            int quantityToRestore = item.getQuantity();
+            
+            // ✅ INCREMENTAR stock de vuelta en BD
+            product.setStock(product.getStock() + quantityToRestore);
+            productRepository.save(product);
+            log.info("Stock restored on clear: productId={}, quantityRestored={}, newStock={}", 
+                product.getId(), quantityToRestore, product.getStock());
         }
         
         cartItemRepository.deleteByUserId(userId);
+        log.info("Cart cleared for userId={}, restored {} items", userId, userItems.size());
     }
     
     /**
@@ -363,6 +387,7 @@ public class CartService {
             .productName(cartItem.getProduct().getName())
             .productImage(cartItem.getProduct().getImageUrl())
             .productPrice(cartItem.getProduct().getPrice())
+            .productStock(cartItem.getProduct().getStock())
             .quantity(cartItem.getQuantity())
             .subtotal(subtotal)
             .createdAt(cartItem.getCreatedAt())

@@ -17,6 +17,7 @@ public class CartItemDTO {
     private String productName;
     private String productImage;
     private BigDecimal productPrice;
+    private Integer productStock;  // ✅ Stock actual del producto
     private Integer quantity;
     private BigDecimal subtotal;
     private LocalDateTime createdAt;

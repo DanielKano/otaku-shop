@@ -266,4 +266,14 @@ public class ProductController {
         
         return ResponseEntity.ok(debug);
     }
+
+    /**
+     * ADMIN FIX ENDPOINT: Corrige productos aprobados con active=null o false
+     */
+    @PostMapping("/admin/fix-active")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> fixApprovedProductsActive() {
+        Map<String, Object> result = productService.fixApprovedProductsActive();
+        return ResponseEntity.ok(result);
+    }
 }

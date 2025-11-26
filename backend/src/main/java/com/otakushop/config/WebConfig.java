@@ -40,13 +40,45 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Convertir ruta relativa a ruta absoluta para servir archivos estáticos
-        String uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize().toUri().toString();
+        // El JAR se ejecuta desde otaku-shop-fullstack/backend/target/otaku-shop-backend-0.1.0.jar
+        // Necesitamos: otaku-shop-fullstack/uploads
+        String uploadsPath = Paths.get(System.getProperty("user.dir"))
+                .getParent()
+                .resolve("uploads")
+                .toAbsolutePath()
+                .toString();
+        
+        // Si la ruta no existe, intenta con la ruta alternativa
+        java.nio.file.Path uploadsDir = Paths.get(uploadsPath);
+        if (!java.nio.file.Files.exists(uploadsDir)) {
+            // Alternativa: busca desde el directorio actual/uploads
+            uploadsPath = Paths.get(System.getProperty("user.dir"))
+                    .resolve("uploads")
+                    .toAbsolutePath()
+                    .toString();
+        }
         
         // Mapear /uploads/** a la carpeta de almacenamiento
+        // Usar el protocolo file: apropiado para el SO
+        String resourceLocation = "file:" + uploadsPath.replace("\\", "/") + "/";
+        
+        log.info("WebConfig: Sirviendo archivos desde {} con URL: {}", uploadsPath, resourceLocation);
+        
+        // Registrar el manejador de recursos para /uploads/**
+        // Este debe ser accesible sin autenticación
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(uploadPath)
-                .setCachePeriod(3600); // Cache por 1 hora
+                .addResourceLocations(resourceLocation)
+                .setCachePeriod(3600)
+                .resourceChain(true)
+                .addResolver(new org.springframework.web.servlet.resource.PathResourceResolver());
+        
+        // También registrarlo bajo /api/uploads/** para que funcione con el context path
+        registry.addResourceHandler("/api/uploads/**")
+                .addResourceLocations(resourceLocation)
+                .setCachePeriod(3600)
+                .resourceChain(true)
+                .addResolver(new org.springframework.web.servlet.resource.PathResourceResolver());
 
-        log.info("WebConfig: Sirviendo archivos desde {}", uploadPath);
+        log.info("WebConfig: Resource handlers registrados correctamente");
     }
 }

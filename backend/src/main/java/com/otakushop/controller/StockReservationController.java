@@ -1,25 +1,10 @@
 package com.otakushop.controller;
 
-/**
- * ⚠️ CONTROLADOR COMENTADO - LEGACY
- * 
- * Este controlador ha sido deshabilitado porque usa métodos que no existen
- * en la nueva implementación de StockReservationService (Fase 3 de arquitectura).
- * 
- * La Fase 3 refactorizó completamente el servicio para usar:
- * - reserveStock(Long productId, Integer quantity, Long userId, String sessionId)
- * - reduceUserReservation(Long productId, Long userId, Integer quantityToRemove)
- * - isStockAvailable(Long productId, Integer requestedQuantity, Integer currentStock)
- * - getAvailableStock(Long productId, Integer currentStock)
- * - getOrderReservations(Long orderId)
- * 
- * Para usar reservas de stock, debes refactorizar este controlador.
- */
-
-/*
 import com.otakushop.service.StockReservationService;
+import com.otakushop.util.SecurityUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,55 +23,71 @@ import java.util.ArrayList;
 public class StockReservationController {
     
     private final StockReservationService reservationService;
+    private final SecurityUtil securityUtil;
     
     @PostMapping("/reserve")
     public ResponseEntity<?> reserveStock(@Valid @RequestBody ReserveStockRequest request) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
-    }
-    
-    @PutMapping("/{reservationId}/update")
-    public ResponseEntity<?> updateReservation(
-            @PathVariable String reservationId,
-            @Valid @RequestBody UpdateQuantityRequest request) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
-    }
-    
-    @PutMapping("/{reservationId}/renew")
-    public ResponseEntity<?> renewReservation(@PathVariable String reservationId) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
-    }
-    
-    @DeleteMapping("/{reservationId}")
-    public ResponseEntity<?> releaseReservation(@PathVariable String reservationId) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
+        try {
+            // Usar userId del token si está disponible, sino usar el del request
+            Long userId = request.getUserId();
+            if (userId == null) {
+                userId = securityUtil.getCurrentUserId();
+            }
+            
+            // Reservar stock en el backend
+            reservationService.reserveStock(
+                request.getProductId(),
+                request.getQuantity(),
+                userId,
+                request.getSessionId()
+            );
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Stock reservado exitosamente");
+            response.put("productId", request.getProductId());
+            response.put("quantity", request.getQuantity());
+            response.put("userId", userId);
+            
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Validación fallida");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Error al reservar stock");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
     
     @PostMapping("/available")
     public ResponseEntity<?> checkAvailability(@Valid @RequestBody CheckAvailabilityRequest request) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
-    }
-    
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getUserReservations(@PathVariable Long userId) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
-    }
-    
-    @GetMapping("/session/{sessionId}")
-    public ResponseEntity<?> getSessionReservations(@PathVariable String sessionId) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
-    }
-
-    @GetMapping("/my-reservations")
-    public ResponseEntity<?> getMyReservations(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
-    }
-
-    @PostMapping("/sync")
-    public ResponseEntity<?> syncReservations(
-            @Valid @RequestBody SyncReservationsRequest request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        // IMPLEMENTACIÓN LEGACY - NO DISPONIBLE
+        try {
+            boolean isAvailable = reservationService.isStockAvailable(
+                request.getProductId(),
+                request.getQuantity(),
+                request.getTotalStock()
+            );
+            
+            Integer availableStock = reservationService.getAvailableStock(
+                request.getProductId(),
+                request.getTotalStock()
+            );
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("isAvailable", isAvailable);
+            response.put("availableStock", availableStock);
+            response.put("requestedQuantity", request.getQuantity());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Error al verificar disponibilidad");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
     @Data
@@ -101,14 +102,7 @@ public class StockReservationController {
         private Long userId;
         private String sessionId;
     }
-    
-    @Data
-    public static class UpdateQuantityRequest {
-        @NotNull(message = "La cantidad es requerida")
-        @Min(value = 1, message = "La cantidad debe ser al menos 1")
-        private Integer quantity;
-    }
-    
+
     @Data
     public static class CheckAvailabilityRequest {
         @NotNull(message = "El ID del producto es requerido")
@@ -122,10 +116,4 @@ public class StockReservationController {
         @Min(value = 1, message = "La cantidad debe ser al menos 1")
         private Integer quantity;
     }
-
-    @Data
-    public static class SyncReservationsRequest {
-        private Map<String, Object> reservations;
-    }
 }
-*/

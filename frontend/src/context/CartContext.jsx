@@ -131,9 +131,9 @@ export const CartProvider = ({ children }) => {
         // Actualizar reserva existente
         stockReservationService.updateReservation(product.id, newQuantity)
         
-        // Si hay usuario, sincronizar con backend
-        if (user?.id) {
-          api.put(`/cart/${product.id}`, { quantity: newQuantity }).catch(error => {
+        // Si hay usuario, sincronizar con backend usando cartItemId
+        if (user?.id && existingItem.cartItemId) {
+          api.put(`/cart/${existingItem.cartItemId}`, { quantity: newQuantity }).catch(error => {
             console.warn('Error updating cart in backend:', error)
           })
         }
@@ -187,19 +187,17 @@ export const CartProvider = ({ children }) => {
   const removeItem = useCallback((productId) => {
     setItems((prevItems) => {
       const item = prevItems.find((i) => i.id === productId)
-      
+
       if (item) {
         // Liberar la reserva
         stockReservationService.releaseReservation(productId)
         
-        // Si hay usuario, eliminar del carrito en el backend
-        if (user?.id) {
-          api.delete(`/cart/${productId}`).catch(error => {
+        // Si hay usuario, eliminar del carrito en el backend usando cartItemId
+        if (user?.id && item.cartItemId) {
+          api.delete(`/cart/${item.cartItemId}`).catch(error => {
             console.warn('Error removing item from backend cart:', error)
           })
-        }
-        
-        addNotification?.({
+        }        addNotification?.({
           message: `Producto eliminado del carrito. La reserva fue liberada y el stock volvió al inventario.`,
           type: 'info'
         })
@@ -253,9 +251,9 @@ export const CartProvider = ({ children }) => {
         // Actualizar reserva con nueva cantidad
         stockReservationService.updateReservation(productId, newQuantity)
         
-        // Si hay usuario, sincronizar con backend
-        if (user?.id) {
-          api.put(`/cart/${productId}`, { quantity: newQuantity }).catch(error => {
+        // Si hay usuario, sincronizar con backend usando cartItemId
+        if (user?.id && item.cartItemId) {
+          api.put(`/cart/${item.cartItemId}`, { quantity: newQuantity }).catch(error => {
             console.warn('Error updating cart in backend:', error)
           })
         }
@@ -268,9 +266,9 @@ export const CartProvider = ({ children }) => {
         // Si la cantidad disminuye, liberar stock de la reserva
         stockReservationService.updateReservation(productId, newQuantity)
         
-        // Si hay usuario, sincronizar con backend
-        if (user?.id) {
-          api.put(`/cart/${productId}`, { quantity: newQuantity }).catch(error => {
+        // Si hay usuario, sincronizar con backend usando cartItemId
+        if (user?.id && item.cartItemId) {
+          api.put(`/cart/${item.cartItemId}`, { quantity: newQuantity }).catch(error => {
             console.warn('Error updating cart in backend:', error)
           })
         }
