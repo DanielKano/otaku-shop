@@ -31,7 +31,7 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
     try {
       await onLogin?.(data)
     } catch (error) {
-      setApiError(error.message || 'Error al iniciar sesión')
+      setApiError(error.message || 'Error - iniciar sesión')
     }
   }
 
