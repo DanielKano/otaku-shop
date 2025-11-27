@@ -27,6 +27,10 @@ export const productService = {
     // Si es JSON normal
     return api.post('/products', data)
   },
+  createWithImageUrl: (data) => {
+    // Crear producto con URL de imagen
+    return api.post('/products', data)
+  },
   update: (id, data) => {
     // Si es FormData (contiene archivo), no setear Content-Type
     if (data instanceof FormData) {

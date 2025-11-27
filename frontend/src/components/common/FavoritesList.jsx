@@ -25,7 +25,13 @@ const FavoritesList = ({ favorites = [], onRemove, onAddToCart }) => {
           <div className="bg-gray-200 dark:bg-gray-700 aspect-square flex items-center justify-center overflow-hidden">
             {product.imageUrl ? (
               <img
-                src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
+                src={
+                  product.imageUrl.startsWith('http')
+                    ? product.imageUrl // Use the full URL if it's an external image
+                    : `${import.meta.env.MODE === 'development'
+                        ? 'http://localhost:8080'
+                        : 'https://otaku-shop.onrender.com'}${product.imageUrl}` // Use local path
+                }
                 alt={product.name}
                 className="w-full h-full object-contain p-4 hover:scale-105 transition-transform"
               />

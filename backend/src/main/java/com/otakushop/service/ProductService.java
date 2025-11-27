@@ -169,9 +169,9 @@ public class ProductService {
         User vendor = userRepository.findById(vendorId)
                 .orElseThrow(() -> new RuntimeException("Vendedor no encontrado"));
 
-        // Procesar imagen si viene
-        String imageUrl = null;
-        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+        // Usar imageUrl si está presente, de lo contrario procesar el archivo de imagen
+        String imageUrl = request.getImageUrl();
+        if (imageUrl == null && request.getImageFile() != null && !request.getImageFile().isEmpty()) {
             try {
                 imageUrl = fileUploadService.uploadImage(request.getImageFile());
             } catch (IOException e) {
@@ -231,6 +231,11 @@ public class ProductService {
                 log.error("Error al actualizar imagen", e);
                 throw new RuntimeException("Error al actualizar imagen: " + e.getMessage());
             }
+        }
+        
+        // Actualizar la URL de la imagen si se proporciona directamente
+        if (request.getImageUrl() != null && !request.getImageUrl().isEmpty()) {
+            product.setImageUrl(request.getImageUrl());
         }
         
         if (request.getActive() != null) {

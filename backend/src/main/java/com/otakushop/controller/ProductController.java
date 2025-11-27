@@ -146,7 +146,8 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal originalPrice,
             @RequestParam String category,
             @RequestParam Integer stock,
-            @RequestParam(required = false) MultipartFile imageFile) {
+            @RequestParam(required = false) MultipartFile imageFile,
+            @RequestParam(required = false) String imageUrl) { // Nuevo parámetro para URL de imagen
         
         Long vendorId = securityUtil.getCurrentUserId();
         
@@ -160,6 +161,7 @@ public class ProductController {
                     .category(category)
                     .stock(stock)
                     .imageFile(imageFile)
+                    .imageUrl(imageUrl) // Pasar la URL de la imagen al servicio
                     .active(true)
                     .build();
             
@@ -175,30 +177,34 @@ public class ProductController {
     @PreAuthorize("hasRole('VENDEDOR')")
     public ResponseEntity<ProductDTO> updateProduct(
             @PathVariable Long id,
-            @RequestParam String name,
-            @RequestParam String description,
-            @RequestParam BigDecimal price,
-            @RequestParam(required = false) BigDecimal originalPrice,
-            @RequestParam String category,
-            @RequestParam Integer stock,
-            @RequestParam(required = false) MultipartFile imageFile) {
-        
+            @RequestBody ProductRequest productUpdateRequest) {
         Long vendorId = securityUtil.getCurrentUserId();
-        
+
         try {
-            ProductRequest request = ProductRequest.builder()
-                    .name(name)
-                    .description(description)
-                    .price(price)
-                    .originalPrice(originalPrice)
-                    .category(category)
-                    .stock(stock)
-                    .imageFile(imageFile)
-                    .active(true)
-                    .build();
-            
-            ProductDTO product = productService.updateProduct(id, request, vendorId);
-            return ResponseEntity.ok(product);
+            ProductDTO product = productService.getProductById(id);
+            if (product == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Verificar que el vendedor sea el propietario del producto
+            if (!product.getVendorId().equals(vendorId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // Actualizar campos del producto
+            product.setName(productUpdateRequest.getName());
+            product.setDescription(productUpdateRequest.getDescription());
+            product.setPrice(productUpdateRequest.getPrice());
+            product.setOriginalPrice(productUpdateRequest.getOriginalPrice());
+            product.setCategory(productUpdateRequest.getCategory());
+            product.setStock(productUpdateRequest.getStock());
+            product.setActive(true); // Mantener activo al actualizar
+
+            // Guardar cambios
+            ProductDTO updatedProduct = productService.updateProduct(
+                id, productUpdateRequest, vendorId
+            );
+            return ResponseEntity.ok(updatedProduct);
         } catch (Exception e) {
             log.error("Error al actualizar producto", e);
             throw new RuntimeException("Error al actualizar producto: " + e.getMessage());

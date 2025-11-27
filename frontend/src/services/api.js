@@ -120,4 +120,12 @@ api.interceptors.response.use(
   },
 )
 
+// URL base para producción (Render) y desarrollo
+// const API_BASE_URL = process.env.NODE_ENV === 'production'
+//   ? 'https://<tu-dominio-en-render>.onrender.com' // Reemplaza con tu dominio en Render
+//   : 'http://localhost:8080';
+
+// Función para construir URLs de imágenes
+export const getImageUrl = (imageName) => `https://otaku-shop-1.onrender.com/uploads/images/${imageName}`;
+
 export default api

@@ -367,15 +367,14 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
     try {
       setLoading(true)
 
-      const formDataToSend = new FormData()
-      formDataToSend.append('name', formData.name)
-      formDataToSend.append('description', formData.description)
-      formDataToSend.append('price', formData.price)
-      formDataToSend.append('stock', formData.stock)
-      formDataToSend.append('category', formData.category)
-      if (formData.imageFile) {
-        formDataToSend.append('imageFile', formData.imageFile)
-      }
+      const formDataToSend = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        stock: formData.stock,
+        category: formData.category,
+        imageUrl: formData.imageUrl, // Enviar la URL de la imagen
+      };
 
       await services.productService.update(product.id, formDataToSend)
       
@@ -608,71 +607,26 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
         {/* URL de Imagen */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">
-            🖼️ Imagen del Producto <span className="text-gray-400 font-normal">(Opcional)</span>
+            🖼️ URL de la Imagen del Producto <span className="text-gray-400 font-normal">(Opcional)</span>
           </label>
-          
-          {/* Current image */}
-          {currentImageUrl && !imagePreview && (
-            <div className="mb-2">
-              <img
-                src={`http://localhost:8080/api/uploads/images/${currentImageUrl}`}
-                alt="Current"
-                className="h-20 w-20 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Imagen actual</p>
-            </div>
-          )}
-
-          {/* File Input */}
-          <div className="mb-2">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleImageChange}
-              disabled={!canEdit || loading}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
-
-          {/* Error messages */}
-          {errors.imageFile && errors.imageFile.length > 0 && (
+          <input
+            type="url"
+            name="imageUrl"
+            value={formData.imageUrl || ''}
+            onChange={handleChange}
+            placeholder="https://example.com/imagen.jpg"
+            disabled={!canEdit || loading}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          {errors.imageUrl && errors.imageUrl.length > 0 && (
             <div className="mt-1 space-y-0.5 mb-2">
-              {errors.imageFile.map((err, idx) => (
+              {errors.imageUrl.map((err, idx) => (
                 <p key={idx} className="text-xs text-red-600 dark:text-red-400">
-                  ✗ {err}
+                  {err}
                 </p>
               ))}
             </div>
           )}
-
-          {/* Image Preview */}
-          {imagePreview && (
-            <div className="mt-2 relative inline-block">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="h-32 w-32 object-cover rounded-lg border border-green-300 dark:border-green-700"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setImagePreview(null)
-                  setFormData(prev => ({ ...prev, imageFile: null }))
-                  const fileInput = document.querySelector('input[type="file"]')
-                  if (fileInput) fileInput.value = ''
-                }}
-                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                disabled={!canEdit || loading}
-              >
-                ✕
-              </button>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Nueva imagen seleccionada</p>
-            </div>
-          )}
-
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            💡 Máximo 5MB - JPG, PNG, WebP, GIF
-          </p>
         </div>
 
         {/* Buttons */}

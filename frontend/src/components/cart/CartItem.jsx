@@ -7,7 +7,7 @@ const buildImageUrl = (imageName) => {
   if (!imageName) return null
   if (imageName.startsWith('http')) return imageName // Already full URL
   // Backend returns just filename, must prepend API path
-  return `http://localhost:8080/api/uploads/images/${imageName}`
+  return `${import.meta.env.MODE === 'development' ? 'http://localhost:8080' : 'https://otaku-shop.onrender.com'}/api/uploads/images/${imageName}`
 }
 
 const CartItem = ({ item, onQuantityChange, onRemove }) => {
@@ -32,8 +32,8 @@ const CartItem = ({ item, onQuantityChange, onRemove }) => {
             alt={item.productName}
             className="w-full h-full object-cover"
             onError={(e) => {
-              e.target.style.display = 'none'
-              e.target.parentElement.textContent = '🎀'
+              e.target.src = 'https://via.placeholder.com/150'; // Fallback image
+              e.target.alt = 'Imagen no disponible';
             }}
           />
         ) : (

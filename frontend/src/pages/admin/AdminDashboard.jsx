@@ -128,6 +128,31 @@ const AdminDashboard = () => {
             </Button>
           </div>
         </NeonCard>
+
+        {/* Renderizar productos aprobados con imágenes */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {products.map(product => (
+            <div key={product.id} className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+              {product.imageUrl && (
+                <img
+                  src={product.imageUrl && product.imageUrl.startsWith('http')
+                    ? product.imageUrl
+                    : product.imageUrl
+                    ? `http://localhost:8080/api/uploads/images/${product.imageUrl}`
+                    : 'https://via.placeholder.com/300?text=No+Image'}
+                  alt={product.name}
+                  className="w-full h-40 object-cover rounded mb-4"
+                />
+              )}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {product.name}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {product.description?.substring(0, 50)}...
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
       <PendingProductsModal

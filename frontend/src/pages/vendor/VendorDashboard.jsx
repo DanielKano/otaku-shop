@@ -126,6 +126,49 @@ const VendorDashboard = () => {
     }
   }
 
+  const handleCreateProductWithUrl = async (formData) => {
+    try {
+      await services.productService.createWithImageUrl(formData)
+      addNotification({
+        type: 'success',
+        message: 'Producto creado exitosamente con URL de imagen',
+      })
+      setIsCreateModalOpen(false)
+
+      // Recargar productos
+      const response = await services.productService.getMyProducts()
+      const allProducts = response.data.products || []
+
+      const grouped = {
+        PENDING: [],
+        APPROVED: [],
+        REJECTED: [],
+        CANCELLED: [],
+      }
+
+      allProducts.forEach(product => {
+        const status = product.status || 'PENDING'
+        if (grouped[status]) {
+          grouped[status].push(product)
+        }
+      })
+
+      setProductsByStatus(grouped)
+      setStats({
+        totalProducts: allProducts.length,
+        pendingApproval: grouped.PENDING.length,
+        approved: grouped.APPROVED.length,
+        rejected: grouped.REJECTED.length,
+      })
+    } catch (error) {
+      console.error('Error creating product with URL:', error)
+      addNotification({
+        type: 'error',
+        message: error.response?.data?.message || 'Error al crear el producto con URL',
+      })
+    }
+  }
+
   const handleCancelProduct = async (productId) => {
     if (!confirm('¿Estás seguro de que deseas cancelar este producto?')) {
       return
@@ -317,7 +360,10 @@ const VendorDashboard = () => {
                         <div className="flex items-center gap-3">
                           {product.imageUrl && (
                             <img
-                              src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
+                              src={product.imageUrl.startsWith('http')
+                                ? product.imageUrl
+                                : `http://localhost:8080/api/uploads/images/${product.imageUrl}`
+                              }
                               alt={product.name}
                               className="w-10 h-10 object-cover rounded"
                             />
@@ -421,6 +467,7 @@ const VendorDashboard = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onProductCreated={handleCreateProduct}
+        onProductCreatedWithUrl={handleCreateProductWithUrl}
       />
     </div>
   )

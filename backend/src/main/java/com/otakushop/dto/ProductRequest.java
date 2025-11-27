@@ -61,6 +61,10 @@ public class ProductRequest {
     @Nullable
     private MultipartFile imageFile;
 
+    @Nullable
+    @Pattern(regexp = "^(https?:\\/\\/).+", message = "La URL de la imagen debe ser válida")
+    private String imageUrl;
+
     @Builder.Default
     private Boolean active = true;
 }

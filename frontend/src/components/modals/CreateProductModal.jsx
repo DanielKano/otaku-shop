@@ -14,6 +14,7 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
     category: '',
     stock: '',
     imageFile: null,
+    imageUrl: '', // New field for image URL
   })
   const [imagePreview, setImagePreview] = useState(null)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -264,6 +265,9 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
       case 'category':
         validation = validateCategory(value)
         break
+      case 'imageUrl': // Validate image URL
+        validation = validateImageUrl(value)
+        break
       default:
         break
     }
@@ -394,6 +398,8 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
       formDataToSend.append('stock', formData.stock)
       if (formData.imageFile) {
         formDataToSend.append('imageFile', formData.imageFile)
+      } else if (formData.imageUrl) {
+        formDataToSend.append('imageUrl', formData.imageUrl) // Add image URL if provided
       }
       
       await onProductCreated(formDataToSend)
@@ -406,6 +412,7 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
         category: '',
         stock: '',
         imageFile: null,
+        imageUrl: '',
       })
       setImagePreview(null)
       setFieldErrors({})
@@ -622,57 +629,34 @@ const CreateProductModal = ({ isOpen, onClose, onProductCreated }) => {
         {/* URL de Imagen */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">
-            🖼️ Imagen del Producto <span className="text-gray-400 font-normal">(Opcional)</span>
+            🌐 URL de la Imagen <span className="text-gray-400 font-normal">(Opcional)</span>
           </label>
-          
-          {/* File Input */}
-          <div className="mb-2">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleImageChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            />
-          </div>
-
-          {/* Error messages */}
-          {fieldErrors.imageFile && fieldErrors.imageFile.length > 0 && (
-            <div className="mt-1 space-y-0.5 mb-2">
-              {fieldErrors.imageFile.map((err, idx) => (
+          <input
+            type="url"
+            name="imageUrl"
+            value={formData.imageUrl}
+            onChange={handleChange}
+            placeholder="https://example.com/imagen.jpg"
+            className={`w-full px-3 py-2 border text-sm rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
+              getFieldStatus('imageUrl') === 'invalid'
+                ? 'border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/20'
+                : getFieldStatus('imageUrl') === 'valid'
+                ? 'border-green-500 focus:ring-green-500 bg-green-50 dark:bg-green-900/20'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+            }`}
+          />
+          {fieldErrors.imageUrl && fieldErrors.imageUrl.length > 0 && (
+            <div className="mt-1 space-y-0.5">
+              {fieldErrors.imageUrl.map((err, idx) => (
                 <p key={idx} className="text-xs text-red-600 dark:text-red-400">
                   ✗ {err}
                 </p>
               ))}
             </div>
           )}
-
-          {/* Image Preview */}
-          {imagePreview && (
-            <div className="mt-2 relative inline-block">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="h-32 w-32 object-cover rounded-lg border border-green-300 dark:border-green-700"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setImagePreview(null)
-                  setFormData(prev => ({ ...prev, imageFile: null }))
-                  const fileInput = document.querySelector('input[type="file"]')
-                  if (fileInput) fileInput.value = ''
-                }}
-                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-              >
-                ✕
-              </button>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Imagen seleccionada</p>
-            </div>
+          {validationState.imageUrl && !fieldErrors.imageUrl?.length && (
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ URL válida</p>
           )}
-
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            💡 Máximo 5MB - JPG, PNG, WebP, GIF
-          </p>
         </div>
 
         {/* Buttons */}

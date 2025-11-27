@@ -35,6 +35,14 @@ const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
       return
     }
 
+    if (!product.imageUrl) {
+      addNotification({
+        message: 'Este producto no tiene una imagen válida',
+        type: 'error',
+      })
+      return
+    }
+
     addItem(product, 1)
     addNotification({
       message: `${product.name} agregado al carrito`,
@@ -55,9 +63,13 @@ const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
         {product.imageUrl ? (
           <img
             src={
-              import.meta.env.MODE === 'development'
-                ? `http://localhost:8080/api/uploads/images/${product.imageUrl}`
-                : `https://otaku-shop.onrender.com/api/uploads/images/${product.imageUrl}`
+              product.imageUrl && product.imageUrl.startsWith('http')
+                ? product.imageUrl
+                : product.imageUrl
+                ? `${import.meta.env.MODE === 'development'
+                    ? 'http://localhost:8080'
+                    : 'https://otaku-shop.onrender.com'}${product.imageUrl}`
+                : 'https://via.placeholder.com/300?text=No+Image' // Placeholder if no image
             }
             alt={product.name}
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"

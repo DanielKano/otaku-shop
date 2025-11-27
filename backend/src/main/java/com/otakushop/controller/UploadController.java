@@ -26,6 +26,9 @@ public class UploadController {
     @Value("${file.upload-dir:uploads/images}")
     private String uploadDir;
 
+    @Value("${server.domain:http://localhost:8080}")
+    private String serverDomain;
+
     /**
      * Sube una imagen de producto
      * Autenticado: Solo usuarios registrados (VENDEDOR, ADMIN, etc.)
@@ -78,15 +81,15 @@ public class UploadController {
             Path filePath = uploadPath.resolve(filename);
             Files.copy(file.getInputStream(), filePath);
 
-            // Retornar URL relativa (sin protocolo/dominio)
-            String imageUrl = "/uploads/images/" + filename;
-            
+            // Retornar URL completa (con dominio)
+            String imageUrl = serverDomain + "/uploads/images/" + filename;
+
             Map<String, String> response = new HashMap<>();
             response.put("url", imageUrl);
             response.put("filename", filename);
-            
+
             log.debug("Imagen guardada: {}", filePath);
-            
+
             return ResponseEntity.ok(response);
             
         } catch (IOException e) {
@@ -99,6 +102,43 @@ public class UploadController {
             return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error inesperado al procesar la imagen"));
+        }
+    }
+
+    /**
+     * Acepta una URL de imagen y la valida
+     * Autenticado: Solo usuarios registrados (VENDEDOR, ADMIN, etc.)
+     */
+    @PostMapping("/image-url")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> uploadImageUrl(@RequestParam("url") String imageUrl) {
+        try {
+            // Validar que la URL no esté vacía
+            if (imageUrl == null || imageUrl.isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "La URL de la imagen no puede estar vacía")
+                );
+            }
+
+            // Validar que la URL apunte a una imagen
+            if (!imageUrl.matches(".*\\.(jpg|jpeg|png|gif|webp)$")) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "La URL debe apuntar a una imagen válida (JPG, PNG, GIF, WebP)")
+                );
+            }
+
+            // Retornar la URL para guardar en la base de datos
+            Map<String, String> response = new HashMap<>();
+            response.put("url", imageUrl);
+
+            log.debug("URL de imagen aceptada: {}", imageUrl);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error al procesar la URL de la imagen: {}", e.getMessage());
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error inesperado al procesar la URL de la imagen"));
         }
     }
 }
