@@ -198,6 +198,9 @@ public class ProductService {
 
     @Transactional
     public ProductDTO updateProduct(Long id, ProductRequest request, Long vendorId) {
+        log.info("Actualizando producto con ID: {}", id);
+        log.info("Contenido del request: {}", request);
+
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 

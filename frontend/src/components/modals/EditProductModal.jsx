@@ -48,6 +48,7 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
         stock: product.stock || '',
         category: product.category || '',
         imageFile: null,
+        imageUrl: product.imageUrl || '',
       })
       setCurrentImageUrl(product.imageUrl || null)
       setImagePreview(null)
@@ -367,19 +368,28 @@ const EditProductModal = ({ isOpen, onClose, product, onProductUpdated }) => {
     try {
       setLoading(true)
 
-      const formDataToSend = {
-        name: formData.name,
-        description: formData.description,
-        price: formData.price,
-        stock: formData.stock,
-        category: formData.category,
-        imageUrl: formData.imageUrl, // Enviar la URL de la imagen
-      };
-
-      await services.productService.update(product.id, formDataToSend)
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('stock', formData.stock);
+      formDataToSend.append('category', formData.category);
       
-      onProductUpdated(product.id)
-      onClose()
+      if (formData.imageFile) {
+        formDataToSend.append('imageFile', formData.imageFile);
+      } else if (formData.imageUrl) {
+        formDataToSend.append('imageUrl', formData.imageUrl);
+      }
+
+      // Enviar datos al backend
+      const response = await services.productService.update(product.id, formDataToSend);
+
+      if (response.status === 200) {
+        onProductUpdated(response.data); // Asegurar que se actualice con los datos correctos
+        onClose();
+      } else {
+        throw new Error('Error inesperado al actualizar el producto');
+      }
     } catch (err) {
       setErrors({ submit: err.response?.data?.message || err.message || 'Error al actualizar el producto' })
       console.error('Error:', err)

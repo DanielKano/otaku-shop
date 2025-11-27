@@ -32,56 +32,41 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
       const errors = []
       if (!value) return { isValid: false, errors: ['Campo requerido'] }
       if (value.trim() === '') return { isValid: false, errors: ['No puede contener solo espacios'] }
-      
+
       const trimmedValue = value.trim()
-      
+
       if (trimmedValue.length < 3) errors.push('Mínimo 3 caracteres')
       if (trimmedValue.length > 50) errors.push('Máximo 50 caracteres')
-      
-      // Validar caracteres permitidos: letras (incluyendo acentuadas), espacios, guiones, apóstrofes
-      // Cubre: María, José, Juan-Pablo, O'Brien, etc.
+
       const nameRegex = /^[a-zA-ZáéíóúñüÁÉÍÓÚÑÜ\s\-']+$/
       if (!nameRegex.test(trimmedValue)) {
         errors.push('Solo letras, espacios, guiones y apóstrofes')
       }
-      
-      // No permitir dobles espacios consecutivos
+
       if (/\s{2,}/.test(trimmedValue)) errors.push('No se permiten espacios consecutivos')
-      
-      // No permitir guiones consecutivos
       if (/\-{2,}/.test(trimmedValue)) errors.push('No se permiten guiones consecutivos')
-      
-      // No permitir apóstrofes consecutivas
       if (/'{2,}/.test(trimmedValue)) errors.push('No se permiten apóstrofes consecutivas')
-      
-      // Validar que no comience o termine con espacio/guión/apóstrofe
+
       if (/^[\s\-']/.test(trimmedValue)) errors.push('No puede comenzar con espacio, guión o apóstrofe')
       if (/[\s\-']$/.test(trimmedValue)) errors.push('No puede terminar con espacio, guión o apóstrofe')
-      
-      // Validar que cada palabra comience con letra (después de espacio/guión)
+
       const words = trimmedValue.split(/[\s\-]+/).filter(w => w.length > 0)
-      
-      // Debe haber al menos 2 palabras (nombre y apellido)
       if (words.length < 2) errors.push('Debe incluir nombre y apellido (mínimo 2 palabras)')
-      
-      // Cada palabra debe tener al menos 2 caracteres
       if (words.some(word => word.length < 2)) errors.push('Cada palabra debe tener mínimo 2 caracteres')
-      
-      // Cada palabra debe comenzar con letra mayúscula o minúscula
       if (words.some(word => word && !/^[a-zA-ZáéíóúñüÁÉÍÓÚÑÜ]/.test(word))) {
         errors.push('Cada palabra debe comenzar con una letra')
       }
-      
-      // No permitir patrones como "aaa" (misma letra repetida 3+ veces)
       if (/(.)\1{2,}/.test(trimmedValue)) {
         errors.push('No se permiten letras repetidas consecutivamente (ej: "aaa")')
       }
-      
-      // Al menos debe haber una letra
-      if (!/[a-zA-ZáéíóúñüÁÉÍÓÚÑÜ]/.test(trimmedValue)) {
-        errors.push('Debe contener al menos una letra')
+
+      // Nueva validación: debe contener al menos una vocal y una consonante
+      const hasVowel = /[aeiouáéíóúüAEIOUÁÉÍÓÚÜ]/.test(trimmedValue)
+      const hasConsonant = /[bcdfghjklmnñpqrstvwxyzBCDFGHJKLMNÑPQRSTVWXYZ]/.test(trimmedValue)
+      if (!hasVowel || !hasConsonant) {
+        errors.push('Debe contener al menos una vocal y una consonante')
       }
-      
+
       return { isValid: errors.length === 0, errors }
     },
     email: (value) => {

@@ -7,11 +7,52 @@ import ValidatedInput from '../ui/ValidatedInput'
 import PasswordStrengthIndicator from '../ui/PasswordStrengthIndicator'
 import Alert from '../ui/Alert'
 import {
-  validateFullName,
   validateEmail,
   validatePhone,
   validatePassword,
 } from '../../utils/validation/validators';
+
+const validateFullName = (value) => {
+  const errors = []
+  if (!value) return { ok: false, errors: ['Campo requerido'] }
+  if (value.trim() === '') return { ok: false, errors: ['No puede contener solo espacios'] }
+
+  const trimmedValue = value.trim()
+
+  if (trimmedValue.length < 3) errors.push('Mínimo 3 caracteres')
+  if (trimmedValue.length > 50) errors.push('Máximo 50 caracteres')
+
+  const nameRegex = /^[a-zA-ZáéíóúñüÁÉÍÓÚÑÜ\s\-']+$/
+  if (!nameRegex.test(trimmedValue)) {
+    errors.push('Solo letras, espacios, guiones y apóstrofes')
+  }
+
+  if (/\s{2,}/.test(trimmedValue)) errors.push('No se permiten espacios consecutivos')
+  if (/\-{2,}/.test(trimmedValue)) errors.push('No se permiten guiones consecutivos')
+  if (/'{2,}/.test(trimmedValue)) errors.push('No se permiten apóstrofes consecutivos')
+
+  if (/^[\s\-']/.test(trimmedValue)) errors.push('No puede comenzar con espacio, guión o apóstrofe')
+  if (/[\s\-']$/.test(trimmedValue)) errors.push('No puede terminar con espacio, guión o apóstrofe')
+
+  const words = trimmedValue.split(/[\s\-]+/).filter(w => w.length > 0)
+  if (words.length < 2) errors.push('Debe incluir nombre y apellido (mínimo 2 palabras)')
+  if (words.some(word => word.length < 2)) errors.push('Cada palabra debe tener mínimo 2 caracteres')
+  if (words.some(word => word && !/^[a-zA-ZáéíóúñüÁÉÍÓÚÑÜ]/.test(word))) {
+    errors.push('Cada palabra debe comenzar con una letra')
+  }
+  if (/(.)\1{2,}/.test(trimmedValue)) {
+    errors.push('No se permiten letras repetidas consecutivamente (ej: "aaa")')
+  }
+
+  // Nueva validación: debe contener al menos una vocal y una consonante
+  const hasVowel = /[aeiouáéíóúüAEIOUÁÉÍÓÚÜ]/.test(trimmedValue)
+  const hasConsonant = /[bcdfghjklmnñpqrstvwxyzBCDFGHJKLMNÑPQRSTVWXYZ]/.test(trimmedValue)
+  if (!hasVowel || !hasConsonant) {
+    errors.push('Debe contener al menos una vocal y una consonante')
+  }
+
+  return { ok: errors.length === 0, errors }
+}
 
 const registerSchema = z
   .object({
@@ -22,7 +63,7 @@ const registerSchema = z
       message: 'Email inválido',
     }),
     phone: z.string().refine((val) => validatePhone(val).ok, {
-        message: 'Teléfono inválido',
+      message: 'Teléfono inválido',
     }),
     password: z
       .string()
@@ -34,6 +75,10 @@ const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Las contraseñas no coinciden',
     path: ['confirmPassword'],
+  })
+  .refine((data) => data.phone.length === 10, {
+    message: 'El teléfono debe tener 10 dígitos',
+    path: ['phone'],
   })
 
 const RegisterForm = ({ onRegister, onLoginClick, isLoading = false }) => {
