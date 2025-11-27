@@ -109,47 +109,6 @@ const LoginForm = ({ onLogin, onRegisterClick, isLoading = false }) => {
           </Button>
         </form>
 
-        {/* Divider */}
-        <div className="my-6 flex items-center">
-          <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
-          <span className="px-3 text-gray-500 dark:text-gray-400 text-sm">o</span>
-          <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
-        </div>
-
-        {/* Social Login */}
-        <div className="space-y-3 mb-6">
-          <Button 
-            variant="glass" 
-            size="lg" 
-            className="w-full flex items-center justify-center gap-2"
-            onClick={() => {
-              window.location.href = 'http://localhost:8080/api/oauth2/authorization/google';
-            }}
-          >
-            <span className="text-xl">🔍</span> Continuar con Google
-          </Button>
-          <Button 
-            variant="glass" 
-            size="lg" 
-            className="w-full flex items-center justify-center gap-2"
-            onClick={() => {
-              window.location.href = 'http://localhost:8080/api/oauth2/authorization/facebook';
-            }}
-          >
-            <span className="text-xl">📘</span> Continuar con Facebook
-          </Button>
-        </div>
-
-        {/* Forgot Password */}
-        <div className="text-center mb-6">
-          <Link 
-            to="/forgot-password" 
-            className="text-neon-cyan hover:text-neon-pink text-sm transition-colors"
-          >
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </div>
-
         {/* Register Link */}
         <p className="text-center text-gray-600 dark:text-gray-400">
           ¿No tienes cuenta?{' '}
