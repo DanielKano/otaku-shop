@@ -132,7 +132,11 @@ const ProductDetail = ({ product, onBack }) => {
           <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center text-6xl overflow-hidden">
             {product.imageUrl ? (
               <img
-                src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
+                src={
+                  import.meta.env.MODE === 'development'
+                    ? `http://localhost:8080/api/uploads/images/${product.imageUrl}`
+                    : `https://otaku-shop.onrender.com/api/uploads/images/${product.imageUrl}`
+                }
                 alt={product.name}
                 className="w-full h-full object-contain p-4"
               />

@@ -40,7 +40,7 @@ export const PAGINATION_LIMIT = 12
 export const API_TIMEOUT = 10000
 
 // URLs de API (será sobrescrita por VITE_API_BASE_URL)
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:8080/api' : 'https://otaku-shop.onrender.com/api')
 
 // Rutas públicas
 export const PUBLIC_ROUTES = [

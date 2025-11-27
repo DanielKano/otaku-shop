@@ -54,7 +54,11 @@ const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
       <div className="aspect-square bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative group">
         {product.imageUrl ? (
           <img
-            src={`http://localhost:8080/api/uploads/images/${product.imageUrl}`}
+            src={
+              import.meta.env.MODE === 'development'
+                ? `http://localhost:8080/api/uploads/images/${product.imageUrl}`
+                : `https://otaku-shop.onrender.com/api/uploads/images/${product.imageUrl}`
+            }
             alt={product.name}
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
           />

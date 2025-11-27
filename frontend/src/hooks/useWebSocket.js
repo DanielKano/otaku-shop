@@ -3,7 +3,7 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { useAuth } from './useAuth';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080/api/ws';
+const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:8080/api/ws' : 'https://otaku-shop.onrender.com/api/ws');
 
 export const useWebSocket = () => {
   const [connected, setConnected] = useState(false);

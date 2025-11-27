@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext'
 import logger from '../utils/logger'
 
 // URL desde variables de entorno con fallback
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:8080/api' : 'https://otaku-shop.onrender.com/api');
 
 logger.info('✓ API_BASE_URL:', API_BASE_URL)
 
